@@ -1,4 +1,11 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ServiPro
+
+Plataforma de contratación de servicios del hogar.
+
+## Diagramas
+
+- [docs/arquitectura-despliegue.md](docs/arquitectura-despliegue.md)
+- [docs/diagrama-prisma.md](docs/diagrama-prisma.md) (autogenerado desde Prisma)
 
 ## Getting Started
 

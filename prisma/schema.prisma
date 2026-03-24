@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  CLIENTE
+  PRESTADOR
+  COMPANY_ADMIN
+}
+
+enum TipoRegistroPrestador {
+  INDEPENDIENTE
+  EMPRESA
+}
+
+enum EstadoOrden {
+  PENDIENTE
+  EN_PROCESO
+  FINALIZADA
+}
+
+enum MetodoPago {
+  TARJETA
+  EFECTIVO
+  TRANSFERENCIA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+/// Representa la clase abstracta "Usuario" del diagrama.
+/// Nota: los métodos del diagrama (iniciarSesion(), etc.) no se modelan en BD.
+model Usuario {
+  id           String @id @default(uuid())
+  nombre       String
+  correo       String @unique
+  passwordHash String
+  telefono     String?
+  role         Role
+
+  cliente   Cliente?
+  prestador Prestador?
+  empresaAdministrada Empresa? @relation("EmpresaAdmin")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+}
+
+model Cliente {
+  id String @id @default(uuid())
+
+  usuarioId String @unique
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  direccionDefault String?
+
+  ordenes Orden[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Empresa {
+  id String @id @default(uuid())
+
+  rfc            String @unique
+  razonSocial    String
+  direccionFiscal String
+
+  /// Admin opcional para cumplir el rol COMPANY_ADMIN del sistema.
+  adminUsuarioId String? @unique
+  adminUsuario   Usuario? @relation("EmpresaAdmin", fields: [adminUsuarioId], references: [id], onDelete: SetNull)
+
+  prestadores Prestador[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Prestador {
+  id String @id @default(uuid())
+
+  usuarioId String @unique
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  calificacionPromedio Float   @default(0)
+  isDisponible         Boolean @default(true)
+  tipoRegistro         TipoRegistroPrestador
+
+  empresaId String?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
+
+  oficios Servicio[]
+  ordenes Orden[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tipoRegistro])
+  @@index([empresaId])
+}
+
+model Servicio {
+  id String @id @default(uuid())
+
+  nombreOficio String @unique
+  descripcion  String?
+  tarifaBase   Float
+
+  ordenes     Orden[]
+  prestadores Prestador[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Orden {
+  id String @id @default(uuid())
+
+  fechaCreacion DateTime @default(now())
+  fechaAgendada DateTime?
+  estado        EstadoOrden @default(PENDIENTE)
+  direccionServicio String
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+
+  prestadorId String
+  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Restrict)
+
+  servicioId String
+  servicio   Servicio @relation(fields: [servicioId], references: [id], onDelete: Restrict)
+
+  pago Pago?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estado])
+  @@index([clienteId])
+  @@index([prestadorId])
+  @@index([servicioId])
+}
+
+model Pago {
+  id String @id @default(uuid())
+
+  monto     Float
+  metodoPago MetodoPago
+  estado    EstadoPago @default(PENDIENTE)
+
+  ordenId String @unique
+  orden   Orden  @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+
+  factura Factura?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Factura {
+  id String @id @default(uuid())
+
+  folioFiscal String @unique
+  rfcEmisor   String
+  rfcReceptor String
+  fechaEmision DateTime @default(now())
+  urlXML      String
+
+  pagoId String @unique
+  pago   Pago   @relation(fields: [pagoId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
