@@ -7,7 +7,24 @@ Plataforma de contratación de servicios del hogar.
 - [docs/arquitectura-despliegue.md](docs/arquitectura-despliegue.md)
 - [docs/diagrama-prisma.md](docs/diagrama-prisma.md) (autogenerado desde Prisma)
 
+Para regenerar el diagrama autogenerado:
+
+```bash
+npm run prisma:diagram
+```
+
 ## Getting Started
+
+## Base de datos (PostgreSQL)
+
+La configuración local usa PostgreSQL vía Docker Compose y Prisma.
+
+```bash
+docker compose up -d
+npx prisma migrate dev
+```
+
+La conexión se toma desde `.env` (variable `DATABASE_URL`).
 
 First, run the development server:
 

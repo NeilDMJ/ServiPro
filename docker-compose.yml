@@ -1,28 +1,28 @@
 services:
   postgres:
     image: postgres:16
-    container_name: quizzly_postgres
+    container_name: servipro_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: quizzly_db
-      POSTGRES_USER: quizzly_user
-      POSTGRES_PASSWORD: quizzly_password
+      POSTGRES_DB: servipro_db
+      POSTGRES_USER: servipro_user
+      POSTGRES_PASSWORD: servipro_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U quizzly_user -d quizzly_db"]
+      test: ["CMD-SHELL", "pg_isready -U servipro_user -d servipro_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   pgadmin:
     image: dpage/pgadmin4:9
-    container_name: quizzly_pgadmin
+    container_name: servipro_pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@quizzly.com}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@servipro.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:

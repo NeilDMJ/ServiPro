@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 enum Role {
@@ -35,8 +35,6 @@ enum EstadoPago {
   RECHAZADO
 }
 
-/// Representa la clase abstracta "Usuario" del diagrama.
-/// Nota: los métodos del diagrama (iniciarSesion(), etc.) no se modelan en BD.
 model Usuario {
   id           String @id @default(uuid())
   nombre       String
@@ -76,7 +74,6 @@ model Empresa {
   razonSocial    String
   direccionFiscal String
 
-  /// Admin opcional para cumplir el rol COMPANY_ADMIN del sistema.
   adminUsuarioId String? @unique
   adminUsuario   Usuario? @relation("EmpresaAdmin", fields: [adminUsuarioId], references: [id], onDelete: SetNull)
 
