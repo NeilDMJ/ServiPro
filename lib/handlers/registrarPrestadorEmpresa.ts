@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "@/lib/auth";
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -8,11 +8,6 @@ function isNonEmptyString(value: unknown): value is string {
 
 function getString(value: unknown): string | undefined {
   return isNonEmptyString(value) ? value.trim() : undefined;
-}
-
-function hashPassword(password: string): string {
-  const saltRounds = 10;
-  return bcrypt.hashSync(password, saltRounds);
 }
 
 type PayloadCompat = {

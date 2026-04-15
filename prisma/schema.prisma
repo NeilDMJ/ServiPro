@@ -77,6 +77,9 @@ model Empresa {
   adminUsuarioId String? @unique
   adminUsuario   Usuario? @relation("EmpresaAdmin", fields: [adminUsuarioId], references: [id], onDelete: SetNull)
 
+  ramo          String?
+  ubicacion     String?
+
   prestadores Prestador[]
 
   createdAt DateTime @default(now())
