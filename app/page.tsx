@@ -1,65 +1,128 @@
-import Image from "next/image";
+import Link from "next/link";
+
+import {
+  serviceCategories,
+  processSteps,
+  trustStats,
+  zones,
+  faqs,
+} from "@/lib/siteContent";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <section className="hero">
+        <div className="container hero-panel">
+          <span className="eyebrow">Plataforma de servicios para el hogar</span>
+          <h1>Tu casa, atendida con precision profesional.</h1>
+          <p>
+            ServiPro conecta hogares con especialistas confiables en limpieza,
+            mantenimiento y reparaciones. Agenda, monitorea y evalua cada servicio
+            desde una sola experiencia digital.
           </p>
+          <div className="hero-actions">
+            <Link href="/registro/cliente" className="button-primary">
+              Crear cuenta
+            </Link>
+            <Link href="/iniciar-sesion?tipo=cliente" className="button-ghost">
+              Iniciar sesion
+            </Link>
+            <Link href="/servicios" className="button-primary">
+              Ver servicios
+            </Link>
+            <Link href="/como-funciona" className="button-ghost">
+              Conocer el proceso
+            </Link>
+          </div>
+          <div className="stats-row" aria-label="Indicadores principales">
+            {trustStats.map((item) => (
+              <div key={item.label} className="stat">
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="section strip">
+        <div className="container">
+          <div className="section-intro">
+            <h2>Conoce lo que puedes resolver en minutos.</h2>
+            <p>
+              Selecciona una categoria, compara perfiles y reserva con precio
+              visible. Todo con seguimiento desde tu panel.
+            </p>
+          </div>
+          <div className="grid grid-3">
+            {serviceCategories.slice(0, 6).map((service) => (
+              <article key={service.name} className="card">
+                <h3>{service.name}</h3>
+                <p>{service.description}</p>
+              </article>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="section-intro">
+            <h2>Un flujo simple para decisiones claras.</h2>
+            <p>
+              Desde la solicitud hasta la evaluacion final, cada etapa deja
+              registro para garantizar cumplimiento y calidad constante.
+            </p>
+          </div>
+          <div className="grid grid-4">
+            {processSteps.map((step) => (
+              <article key={step.title} className="card">
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section strip">
+        <div className="container">
+          <div className="section-intro">
+            <h2>Cobertura en zonas clave.</h2>
+            <p>
+              Operamos en colonias prioritarias para asegurar tiempos de llegada
+              consistentes y mejor disponibilidad de especialistas.
+            </p>
+          </div>
+          <div className="chip-row" aria-label="Zonas con cobertura">
+            {zones.map((zone) => (
+              <span key={zone} className="chip">
+                {zone}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="section-intro">
+            <h2>Preguntas frecuentes.</h2>
+            <p>
+              Respuestas rapidas para ayudarte a contratar con confianza desde el
+              primer servicio.
+            </p>
+          </div>
+          <div className="grid grid-3">
+            {faqs.map((faq) => (
+              <article key={faq.question} className="card">
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
