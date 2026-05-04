@@ -102,6 +102,9 @@ model Prestador {
   oficios Servicio[]
   ordenes Orden[]
 
+  categoriaId  String?
+  categoria    Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -181,4 +184,38 @@ model Factura {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum EstadoCategoria {
+  ACTIVA
+  INACTIVA
+}
+
+model Categoria {
+  id          String           @id @default(uuid())
+  nombre      String           @unique
+  descripcion String
+  icono       String?
+  estado      EstadoCategoria  @default(ACTIVA)
+
+  prestadores Prestador[]
+  logAuditoria LogAuditoria[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([estado])
+}
+
+model LogAuditoria {
+  id          String   @id @default(uuid())
+  accion      String   // "CREAR" | "EDITAR" | "ELIMINAR"
+  entidad     String   // "Categoria"
+  entidadId   String
+  usuarioId   String
+  detalle     String?
+  timestamp   DateTime @default(now())
+
+  categoriaId String?
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
 }

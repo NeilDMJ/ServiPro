@@ -1,7 +1,9 @@
 import Link from "next/link";
-
 import { LogoutButton } from "@/app/components/LogoutButton";
 import { requireSessionForPanel } from "@/lib/session";
+
+type CardSimple = string;
+type CardLink = { label: string; descripcion: string; href: string | null };
 
 const panelContent = {
   cliente: {
@@ -12,7 +14,7 @@ const panelContent = {
       "Solicitar un nuevo servicio con dirección guardada.",
       "Consultar historial de órdenes y pagos.",
       "Actualizar datos de contacto para futuras visitas.",
-    ],
+    ] as CardSimple[],
   },
   trabajador: {
     title: "Panel de trabajador",
@@ -22,19 +24,19 @@ const panelContent = {
       "Visualizar agenda y órdenes pendientes.",
       "Actualizar disponibilidad operativa.",
       "Consultar métricas de cumplimiento y calidad.",
-    ],
+    ] as CardSimple[],
   },
   administrador: {
     title: "Panel de administrador",
     description:
       "Supervisa la operación, coordina prestadores y valida el flujo general de servicio desde una vista central.",
     cards: [
-      "Monitorear altas de personal y cobertura activa.",
-      "Revisar incidencias y cumplimiento por zona.",
-      "Consultar información clave de control operativo.",
-    ],
+      { label: "Gestionar categorías", descripcion: "Alta, edición y baja de categorías de servicios.", href: "/administrador/categorias" },
+      { label: "Monitorear personal", descripcion: "Monitorear altas de personal y cobertura activa.", href: null },
+      { label: "Revisar incidencias", descripcion: "Revisar incidencias y cumplimiento por zona.", href: null },
+    ] as CardLink[],
   },
-} as const;
+};
 
 type PanelPageProps = {
   params: Promise<{ tipo: keyof typeof panelContent }>;
@@ -67,13 +69,25 @@ export default async function PanelPage({ params }: PanelPageProps) {
 
       <section className="section">
         <div className="container auth-choice-grid">
-          {content.cards.map((item) => (
-            <article key={item} className="choice-card">
-              <span className="choice-accent">Acción disponible</span>
-              <h2>{content.title}</h2>
-              <p>{item}</p>
-            </article>
-          ))}
+          {content.cards.map((item, i) => {
+            const isLink = typeof item === "object";
+            const articleContent = (
+              <article key={i} className="choice-card">
+                <span className="choice-accent">Acción disponible</span>
+                <h2>{isLink ? item.label : content.title}</h2>
+                <p>{isLink ? item.descripcion : item}</p>
+              </article>
+            );
+
+            if (isLink && item.href) {
+              return (
+                <Link key={i} href={item.href} style={{ textDecoration: "none" }}>
+                  {articleContent}
+                </Link>
+              );
+            }
+            return articleContent;
+          })}
         </div>
 
         <div className="container form-actions-row panel-actions-row">
