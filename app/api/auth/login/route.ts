@@ -56,6 +56,11 @@ export async function POST(request: NextRequest) {
       nombre: true,
       role: true,
       passwordHash: true,
+      prestador: {
+        select: {
+          estadoVerificacion: true,
+        },
+      },
     },
   });
 
@@ -71,6 +76,36 @@ export async function POST(request: NextRequest) {
       { error: "La cuenta no corresponde al tipo de usuario seleccionado" },
       { status: 403 }
     );
+  }
+
+  // Validar que prestadores estén verificados para acceder
+  if (usuario.role === "PRESTADOR") {
+    if (!usuario.prestador?.estadoVerificacion) {
+      return Response.json(
+        { error: "El perfil del prestador no encontrado" },
+        { status: 500 }
+      );
+    }
+
+    if (usuario.prestador.estadoVerificacion === "PENDIENTE_DE_VERIFICACION") {
+      return Response.json(
+        {
+          error: "Tu perfil está pendiente de verificación. Por favor, completa la carga de documentos requeridos.",
+          estadoVerificacion: "PENDIENTE_DE_VERIFICACION",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (usuario.prestador.estadoVerificacion === "RECHAZADO") {
+      return Response.json(
+        {
+          error: "Tu perfil ha sido rechazado. Contacta con soporte para más información.",
+          estadoVerificacion: "RECHAZADO",
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const cookieStore = await cookies();

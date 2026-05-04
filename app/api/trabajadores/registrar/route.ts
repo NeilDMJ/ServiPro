@@ -104,12 +104,20 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             tipoRegistro: true,
+            estadoVerificacion: true,
           },
         },
       },
     });
 
-    return Response.json({ usuario }, { status: 201 });
+    return Response.json(
+      {
+        usuario,
+        mensaje:
+          "Registro exitoso. Por favor, carga los documentos requeridos para completar la verificación.",
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     console.error(error);
 

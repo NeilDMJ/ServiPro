@@ -104,6 +104,8 @@ export async function handleRegistrarPrestadorEmpresa(request: NextRequest) {
             empresa: { connect: { id: empresaId } },
             calificacionPromedio: 0,
             isDisponible: true,
+            estadoVerificacion: "VERIFICADO", // Auto-verificado por ser de empresa
+            fechaVerificacion: new Date(),
             oficios: oficioConnectOrCreate
               ? { connectOrCreate: oficioConnectOrCreate }
               : undefined,
@@ -114,11 +116,24 @@ export async function handleRegistrarPrestadorEmpresa(request: NextRequest) {
         id: true,
         correo: true,
         role: true,
-        prestador: { select: { id: true, empresaId: true, tipoRegistro: true } },
+        prestador: { 
+          select: { 
+            id: true, 
+            empresaId: true, 
+            tipoRegistro: true,
+            estadoVerificacion: true,
+          } 
+        },
       },
     });
 
-    return Response.json({ usuario }, { status: 201 });
+    return Response.json(
+      { 
+        usuario,
+        mensaje: "Registro exitoso. La cuenta está lista para usar."
+      },
+      { status: 201 }
+    );
   } catch (err: unknown) {
     console.error(err);
 

@@ -17,6 +17,12 @@ enum TipoRegistroPrestador {
   EMPRESA
 }
 
+enum EstadoVerificacionPrestador {
+  PENDIENTE_DE_VERIFICACION
+  VERIFICADO
+  RECHAZADO
+}
+
 enum EstadoOrden {
   PENDIENTE
   EN_PROCESO
@@ -96,6 +102,11 @@ model Prestador {
   isDisponible         Boolean @default(true)
   tipoRegistro         TipoRegistroPrestador
 
+  estadoVerificacion EstadoVerificacionPrestador @default(PENDIENTE_DE_VERIFICACION)
+  documentos         Documento[]
+  fechaVerificacion  DateTime?
+  notasVerificacion  String?
+
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
 
@@ -107,6 +118,25 @@ model Prestador {
 
   @@index([tipoRegistro])
   @@index([empresaId])
+  @@index([estadoVerificacion])
+}
+
+model Documento {
+  id String @id @default(uuid())
+
+  nombreArchivo String
+  tipoDocumento String // ej: "cedula", "certificado", "comprobante_domicilio"
+  rutaArchivo   String
+  estado        String @default("CARGADO") // CARGADO, VALIDADO, RECHAZADO
+
+  prestadorId String
+  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([prestadorId])
+  @@index([estado])
 }
 
 model Servicio {

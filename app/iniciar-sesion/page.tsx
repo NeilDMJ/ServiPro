@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent, FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -17,7 +17,7 @@ const userTypeOptions = [
   { value: "administrador", label: "Administrador" },
 ] as const;
 
-export default function IniciarSesionPage() {
+function LoginFormComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState<LoginFormState>({
@@ -66,6 +66,7 @@ export default function IniciarSesionPage() {
 
       const data = (await response.json()) as {
         error?: string;
+        estadoVerificacion?: string;
         usuario?: {
           nombre?: string;
           role?: string;
@@ -113,6 +114,7 @@ export default function IniciarSesionPage() {
               <li>Credenciales obligatorias.</li>
               <li>Comparación segura contra `passwordHash`.</li>
               <li>Verificación del rol contra el tipo de usuario elegido.</li>
+              <li>Validación de estado de verificación para prestadores.</li>
             </ul>
           </div>
         </div>
@@ -183,5 +185,13 @@ export default function IniciarSesionPage() {
         </div>
       </section>
     </>
+  );
+}
+
+export default function IniciarSesionPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <LoginFormComponent />
+    </Suspense>
   );
 }
