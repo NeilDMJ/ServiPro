@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 type LoginFormState = {
   correo: string;
-  password: string;
+  contraseña: string;
   tipoUsuario: "cliente" | "trabajador" | "administrador";
 };
 
@@ -17,12 +17,17 @@ const userTypeOptions = [
   { value: "administrador", label: "Administrador" },
 ] as const;
 
+/**
+ * IMPLEMENTACIÓN SEGÚN: Diagrama de Secuencia: Inicio de Sesión
+ * Variables y métodos acoplados: enviarCredenciales, correo, contraseña, 
+ * accesoConcedido, errorAutenticacion, mostrarPanelUsuario.
+ */
 function LoginFormComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState<LoginFormState>({
     correo: "",
-    password: "",
+    contraseña: "",
     tipoUsuario: "cliente",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,47 +54,58 @@ function LoginFormComponent() {
     }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function errorAutenticacion(mensaje: string) {
+    setErrorMessage(mensaje);
+  }
+
+  function mostrarPanelUsuario(tipoUsuario?: string) {
+    router.push(tipoUsuario ? `/panel/${tipoUsuario}` : "/cuenta");
+    router.refresh();
+  }
+
+  function accesoConcedido(data: any) {
+    setSuccessMessage(
+      `Credenciales validadas para ${data.usuario?.nombre ?? "el usuario"} (${data.usuario?.role ?? "sin rol"}).`
+    );
+    setForm((current) => ({ ...current, contraseña: "" }));
+    mostrarPanelUsuario(data.usuario?.tipoUsuario);
+  }
+
+  async function enviarCredenciales(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      // verificarCredenciales se realiza en el backend
+      const response = await fetch("/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          correo: form.correo,
+          contraseña: form.contraseña,
+          tipoUsuario: form.tipoUsuario
+        }),
       });
 
-      const data = (await response.json()) as {
-        error?: string;
-        estadoVerificacion?: string;
-        usuario?: {
-          nombre?: string;
-          role?: string;
-          correo?: string;
-          tipoUsuario?: string;
-        };
-      };
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch {
+        // Si el backend no existe, retornará HTML y fallará el parseo
+      }
 
       if (!response.ok) {
-        setErrorMessage(data.error ?? "No fue posible validar las credenciales.");
+        errorAutenticacion(data.error ?? "El endpoint de login aún no está implementado en el backend.");
         return;
       }
 
-      setSuccessMessage(
-        `Credenciales validadas para ${data.usuario?.nombre ?? "el usuario"} (${data.usuario?.role ?? "sin rol"}).`
-      );
-      setForm((current) => ({ ...current, password: "" }));
-      router.push(
-        data.usuario?.tipoUsuario ? `/panel/${data.usuario.tipoUsuario}` : "/cuenta"
-      );
-      router.refresh();
+      accesoConcedido(data);
     } catch {
-      setErrorMessage("Ocurrió un error al conectar con el servidor.");
+      errorAutenticacion("Ocurrió un error al conectar con el servidor.");
     } finally {
       setIsSubmitting(false);
     }
@@ -122,7 +138,7 @@ function LoginFormComponent() {
 
       <section className="section">
         <div className="container auth-form-layout">
-          <form className="auth-form-card" onSubmit={handleSubmit}>
+          <form className="auth-form-card" onSubmit={enviarCredenciales}>
             <div className="auth-form-header">
               <h2>Acceder a ServiPro</h2>
               <p>Selecciona tu perfil y valida tus datos de acceso.</p>
@@ -155,9 +171,9 @@ function LoginFormComponent() {
               <label className="form-field">
                 <span>Contraseña</span>
                 <input
-                  name="password"
+                  name="contraseña"
                   type="password"
-                  value={form.password}
+                  value={form.contraseña}
                   onChange={handleChange}
                   placeholder="Ingresa tu contraseña"
                   required

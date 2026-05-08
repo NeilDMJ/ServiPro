@@ -9,22 +9,31 @@ type RegisterTrabajadorState = {
   nombre: string;
   correo: string;
   telefono: string;
-  oficioPrincipal: string;
+  especialidad: string;
   tarifaInicial: string;
-  password: string;
-  confirmPassword: string;
+  documentosProfesionales: string;
+  contraseña: string;
+  confirmarContraseña: string;
 };
 
 const initialState: RegisterTrabajadorState = {
   nombre: "",
   correo: "",
   telefono: "",
-  oficioPrincipal: "",
+  especialidad: "",
   tarifaInicial: "",
-  password: "",
-  confirmPassword: "",
+  documentosProfesionales: "",
+  contraseña: "",
+  confirmarContraseña: "",
 };
 
+/**
+ * IMPLEMENTACIÓN SEGÚN: 
+ * 1. Diagrama de Actividad: Registro (Rama Freelancer - estado "Pendiente")
+ * 2. Diagrama de Secuencia: Registro
+ * Variables y métodos acoplados: enviarDatosRegistro, nombre, correo, contraseña, 
+ * especialidad, documentosProfesionales, rol, estado, confirmacionRegistro, registroExitoso.
+ */
 export default function RegistroTrabajadorPage() {
   const router = useRouter();
   const [form, setForm] = useState(initialState);
@@ -37,12 +46,21 @@ export default function RegistroTrabajadorPage() {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function confirmacionRegistro(mensaje: string) {
+    setSuccessMessage(mensaje);
+  }
+
+  function registroExitoso() {
+    setForm(initialState);
+    router.push("/iniciar-sesion?tipo=trabajador");
+  }
+
+  async function enviarDatosRegistro(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (form.password !== form.confirmPassword) {
+    if (form.contraseña !== form.confirmarContraseña) {
       setErrorMessage("La confirmación de contraseña no coincide.");
       return;
     }
@@ -50,29 +68,43 @@ export default function RegistroTrabajadorPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/trabajadores/registrar", {
+      const payload = {
+        nombre: form.nombre,
+        correo: form.correo,
+        contraseña: form.contraseña,
+        rol: "Freelancer",
+        estado: "Pendiente",
+        telefono: form.telefono,
+        especialidad: form.especialidad,
+        tarifaInicial: form.tarifaInicial,
+        documentosProfesionales: form.documentosProfesionales
+      };
+
+      const response = await fetch("/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      const raw = await response.text();
-      const data = raw
-        ? (JSON.parse(raw) as { error?: string; usuario?: { nombre?: string } })
-        : {};
+      let data: any = {};
+      try {
+        const raw = await response.text();
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        // ...
+      }
 
       if (!response.ok) {
-        setErrorMessage(data.error ?? "No fue posible crear la cuenta de trabajador.");
+        setErrorMessage(data.error ?? "El endpoint de registro aún no está implementado en el backend.");
         return;
       }
 
-      setSuccessMessage(
+      confirmacionRegistro(
         `Cuenta de trabajador creada para ${data.usuario?.nombre ?? "el usuario"}.`
       );
-      setForm(initialState);
-      router.push("/iniciar-sesion?tipo=trabajador");
+      registroExitoso();
     } catch {
       setErrorMessage("Ocurrió un error al conectar con el servidor.");
     } finally {
@@ -105,7 +137,7 @@ export default function RegistroTrabajadorPage() {
 
       <section className="section">
         <div className="container auth-form-layout">
-          <form className="auth-form-card" onSubmit={handleSubmit}>
+          <form className="auth-form-card" onSubmit={enviarDatosRegistro}>
             <div className="auth-form-header">
               <h2>Datos del trabajador</h2>
               <p>Completa los campos para habilitar acceso operativo.</p>
@@ -128,15 +160,30 @@ export default function RegistroTrabajadorPage() {
               </label>
 
               <label className="form-field">
-                <span>Oficio o profesión</span>
+                <span>Especialidad</span>
                 <input
-                  name="oficioPrincipal"
+                  name="especialidad"
                   type="text"
-                  value={form.oficioPrincipal}
+                  value={form.especialidad}
                   onChange={handleChange}
                   placeholder="Ej. Electricista, Plomero..."
                   required
                 />
+              </label>
+
+              <label className="form-field form-field-full">
+                <span>Cargar documentos profesionales</span>
+                <input
+                  name="documentosProfesionales"
+                  type="file"
+                  accept=".pdf,.jpg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setForm((prev) => ({ ...prev, documentosProfesionales: file.name }));
+                  }}
+                  required
+                />
+                <small className="form-text text-muted" style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px', display: 'block' }}>Sube tu CV, certificaciones o documentos de identidad.</small>
               </label>
 
               <label className="form-field">
@@ -156,9 +203,9 @@ export default function RegistroTrabajadorPage() {
               <label className="form-field">
                 <span>Contraseña</span>
                 <input
-                  name="password"
+                  name="contraseña"
                   type="password"
-                  value={form.password}
+                  value={form.contraseña}
                   onChange={handleChange}
                   minLength={8}
                   required
@@ -168,9 +215,9 @@ export default function RegistroTrabajadorPage() {
               <label className="form-field">
                 <span>Confirmar contraseña</span>
                 <input
-                  name="confirmPassword"
+                  name="confirmarContraseña"
                   type="password"
-                  value={form.confirmPassword}
+                  value={form.confirmarContraseña}
                   onChange={handleChange}
                   minLength={8}
                   required

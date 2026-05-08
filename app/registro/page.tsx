@@ -18,12 +18,12 @@ const userChoices = [
     accent: "Prestador autónomo",
   },
   {
-    title: "Trabajador de Empresa",
+    title: "Empresa",
     description:
-      "Únete a una organización registrada para colaborar como parte de su equipo operativo.",
-    href: "/registro/trabajador-empresa",
-    cta: "Vincularme a empresa",
-    accent: "Colaborador de equipo",
+      "Registra tu organización en la plataforma para ofrecer servicios.",
+    href: "/registro/empresa",
+    cta: "Registrar empresa",
+    accent: "Organización",
   },
   {
     title: "Administrador",

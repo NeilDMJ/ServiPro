@@ -80,6 +80,16 @@ export default async function PanelPage({ params }: PanelPageProps) {
           <Link href="/cuenta" className="button-primary">
             Ver cuenta
           </Link>
+          {tipo === "cliente" && (
+            <>
+              <Link href="/publicar-necesidad" className="button-primary">
+                Publicar Necesidad
+              </Link>
+              <Link href="/buscar-trabajador" className="button-primary">
+                Buscar Trabajador
+              </Link>
+            </>
+          )}
           <LogoutButton />
         </div>
       </section>

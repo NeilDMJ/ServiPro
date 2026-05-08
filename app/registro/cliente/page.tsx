@@ -10,8 +10,8 @@ type RegisterFormState = {
   correo: string;
   telefono: string;
   direccion: string;
-  password: string;
-  confirmPassword: string;
+  contraseña: string;
+  confirmarContraseña: string;
 };
 
 const initialState: RegisterFormState = {
@@ -19,10 +19,17 @@ const initialState: RegisterFormState = {
   correo: "",
   telefono: "",
   direccion: "",
-  password: "",
-  confirmPassword: "",
+  contraseña: "",
+  confirmarContraseña: "",
 };
 
+/**
+ * IMPLEMENTACIÓN SEGÚN: 
+ * 1. Diagrama de Actividad: Registro (Rama Cliente - estado "Activo")
+ * 2. Diagrama de Secuencia: Registro
+ * Variables y métodos acoplados: enviarDatosRegistro, nombre, correo, contraseña, 
+ * rol, estado, confirmacionRegistro, registroExitoso.
+ */
 export default function RegistroClientePage() {
   const router = useRouter();
   const [form, setForm] = useState(initialState);
@@ -37,12 +44,21 @@ export default function RegistroClientePage() {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function confirmacionRegistro(mensaje: string) {
+    setSuccessMessage(mensaje);
+  }
+
+  function registroExitoso() {
+    setForm(initialState);
+    router.push("/iniciar-sesion?tipo=cliente");
+  }
+
+  async function enviarDatosRegistro(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (form.password !== form.confirmPassword) {
+    if (form.contraseña !== form.confirmarContraseña) {
       setErrorMessage("La confirmación de contraseña no coincide.");
       return;
     }
@@ -50,32 +66,41 @@ export default function RegistroClientePage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/clientes/registrar", {
+      const payload = {
+        nombre: form.nombre,
+        correo: form.correo,
+        contraseña: form.contraseña,
+        rol: "Cliente",
+        estado: "Activo",
+        telefono: form.telefono,
+        direccion: form.direccion
+      };
+
+      const response = await fetch("/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      const raw = await response.text();
-      const data = raw
-        ? (JSON.parse(raw) as {
-            error?: string;
-            usuario?: { nombre?: string; correo?: string };
-          })
-        : {};
+      let data: any = {};
+      try {
+        const raw = await response.text();
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        // En caso de que el backend retorne HTML 404
+      }
 
       if (!response.ok) {
-        setErrorMessage(data.error ?? "No fue posible completar el registro.");
+        setErrorMessage(data.error ?? "El endpoint de registro aún no está implementado en el backend.");
         return;
       }
 
-      setSuccessMessage(
+      confirmacionRegistro(
         `Cuenta creada para ${data.usuario?.nombre ?? "el cliente"}. Ya puedes iniciar sesión.`
       );
-      setForm(initialState);
-      router.push("/iniciar-sesion?tipo=cliente");
+      registroExitoso();
     } catch {
       setErrorMessage("Ocurrió un error al conectar con el servidor.");
     } finally {
@@ -109,7 +134,7 @@ export default function RegistroClientePage() {
 
       <section className="section">
         <div className="container auth-form-layout">
-          <form className="auth-form-card" onSubmit={handleSubmit}>
+          <form className="auth-form-card" onSubmit={enviarDatosRegistro}>
             <div className="auth-form-header">
               <h2>Datos del cliente</h2>
               <p>Completa la información obligatoria para habilitar el acceso.</p>
@@ -155,9 +180,9 @@ export default function RegistroClientePage() {
               <label className="form-field">
                 <span>Contraseña</span>
                 <input
-                  name="password"
+                  name="contraseña"
                   type="password"
-                  value={form.password}
+                  value={form.contraseña}
                   onChange={handleChange}
                   placeholder="Mínimo 8 caracteres"
                   minLength={8}
@@ -180,9 +205,9 @@ export default function RegistroClientePage() {
               <label className="form-field form-field-full">
                 <span>Confirmar contraseña</span>
                 <input
-                  name="confirmPassword"
+                  name="confirmarContraseña"
                   type="password"
-                  value={form.confirmPassword}
+                  value={form.confirmarContraseña}
                   onChange={handleChange}
                   placeholder="Repite tu contraseña"
                   minLength={8}
