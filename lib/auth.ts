@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-export type AppRole = "CLIENTE" | "PRESTADOR" | "COMPANY_ADMIN";
+export type AppRole = "CLIENTE" | "PRESTADOR" | "COMPANY_ADMIN" | "VERIFICADOR";
 
 const SESSION_SECRET =
   process.env.SESSION_SECRET ?? "servipro-dev-session-secret";
@@ -14,6 +14,7 @@ export const userTypeToRole = {
   cliente: "CLIENTE",
   trabajador: "PRESTADOR",
   administrador: "COMPANY_ADMIN",
+  verificador:   "VERIFICADOR",  
 } as const satisfies Record<string, AppRole>;
 
 export type UserType = keyof typeof userTypeToRole;
@@ -51,6 +52,8 @@ export function getUserTypeFromRole(role: AppRole): UserType {
       return "trabajador";
     case "COMPANY_ADMIN":
       return "administrador";
+    case "VERIFICADOR":
+      return "verificador";
   }
 }
 

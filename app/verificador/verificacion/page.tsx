@@ -3,10 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { VerificacionManager } from "./VerificacionManager";
 
 export default async function VerificacionPage() {
-  // Solo COMPANY_ADMIN puede entrar
   await requireSessionForPanel("administrador");
 
-  // Carga inicial: prestadores pendientes de verificación
   const prestadores = await prisma.prestador.findMany({
     where: {
       estadoVerificacion: {
@@ -25,10 +23,11 @@ export default async function VerificacionPage() {
       id: true,
       estadoVerificacion: true,
       intentosVerificacion: true,
-      createdAt: true,
-      usuario: { select: { nombre: true, correo: true } },
-      oficios: { select: { nombreOficio: true } },
-      documentos: {
+      createdAt: true,                          // Fecha de registro
+      usuario:   { select: { nombre: true, correo: true } }, // Nombre (*)
+      categoria: { select: { nombre: true } },  // Categoría de servicio (*)
+      oficios:   { select: { nombreOficio: true } },
+      documentos: {                             // Documentos cargados
         select: {
           id: true,
           tipo: true,
@@ -56,7 +55,6 @@ export default async function VerificacionPage() {
     },
   });
 
-  // Serializar fechas para pasar como prop al Client Component
   const data = prestadores.map((p) => ({
     ...p,
     createdAt: p.createdAt.toISOString(),
@@ -64,7 +62,7 @@ export default async function VerificacionPage() {
       ? {
           ...p.verificacion,
           fechaIniciada: p.verificacion.fechaIniciada?.toISOString() ?? null,
-          fechaLimite: p.verificacion.fechaLimite?.toISOString() ?? null,
+          fechaLimite:   p.verificacion.fechaLimite?.toISOString()   ?? null,
         }
       : null,
   }));

@@ -10,6 +10,7 @@ enum Role {
   CLIENTE
   PRESTADOR
   COMPANY_ADMIN
+  VERIFICADOR
 }
 
 enum TipoRegistroPrestador {

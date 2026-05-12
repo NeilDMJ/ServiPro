@@ -21,10 +21,10 @@ const panelContent = {
     description:
       "Revisa asignaciones, disponibilidad, especialidades registradas y seguimiento de servicios en campo.",
     cards: [
-      "Visualizar agenda y órdenes pendientes.",
-      "Actualizar disponibilidad operativa.",
-      "Consultar métricas de cumplimiento y calidad.",
-    ] as CardSimple[],
+      { label: "Subir INE / documentos",   descripcion: "Carga tu identificación oficial para activar tu perfil verificado.", href: "/prestadores/documentos" },
+      { label: "Ver agenda y órdenes",     descripcion: "Visualizar asignaciones y órdenes pendientes.", href: null },
+      { label: "Actualizar disponibilidad", descripcion: "Actualizar disponibilidad operativa.", href: null },
+    ] as CardLink[],
   },
   administrador: {
     title: "Panel de administrador",
@@ -32,9 +32,16 @@ const panelContent = {
       "Supervisa la operación, coordina prestadores y valida el flujo general de servicio desde una vista central.",
     cards: [
       { label: "Gestionar categorías",          descripcion: "Alta, edición y baja de categorías de servicios.",                    href: "/administrador/categorias"   },
-      { label: "Verificar credenciales",         descripcion: "Valida documentos e identidad de prestadores antes de activarlos.",   href: "/administrador/verificacion" },
       { label: "Monitorear personal",            descripcion: "Monitorear altas de personal y cobertura activa.",                    href: null },
       { label: "Revisar incidencias",            descripcion: "Revisar incidencias y cumplimiento por zona.",                        href: null },
+    ] as CardLink[],
+  },
+  Verificador: {
+    title: "Panel de verificador",
+    description:
+      "Supervisa la operación, coordina prestadores y valida el flujo general de servicio desde una vista central.",
+    cards: [
+      { label: "Verificar credenciales",         descripcion: "Valida documentos e identidad de prestadores antes de activarlos.",   href: "/verificador/verificacion" },
     ] as CardLink[],
   },
 };

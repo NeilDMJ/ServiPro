@@ -53,6 +53,7 @@ type Prestador = {
   intentosVerificacion: number;
   createdAt: string;
   usuario: { nombre: string; correo: string };
+  categoria: { nombre: string } | null;
   oficios: { nombreOficio: string }[];
   documentos: Documento[];
   verificacion: Verificacion | null;
@@ -62,56 +63,56 @@ type Props = { initialData: Prestador[] };
 
 
 const ETIQUETA_ESTADO: Record<EstadoVerificacion, string> = {
-  PENDIENTE_VERIFICACION:  "Pendiente",
-  EN_REVISION:             "En revisión",
+  PENDIENTE_VERIFICACION: "Pendiente",
+  EN_REVISION: "En revisión",
   VERIFICACION_EN_PROCESO: "En proceso",
-  PENDIENTE_INFORMACION:   "Pend. info",
-  ESCALADO_FALSIFICACION:  "Escalado",
-  SUSPENDIDO_TEMPORALMENTE:"Suspendido",
-  VERIFICADO:              "Verificado",
-  RECHAZADO:               "Rechazado",
+  PENDIENTE_INFORMACION: "Pend. info",
+  ESCALADO_FALSIFICACION: "Escalado",
+  SUSPENDIDO_TEMPORALMENTE: "Suspendido",
+  VERIFICADO: "Verificado",
+  RECHAZADO: "Rechazado",
 };
 
 const COLOR_ESTADO: Record<EstadoVerificacion, string> = {
-  PENDIENTE_VERIFICACION:  "#6e6e73",
-  EN_REVISION:             "#0071e3",
+  PENDIENTE_VERIFICACION: "#6e6e73",
+  EN_REVISION: "#0071e3",
   VERIFICACION_EN_PROCESO: "#007aff",
-  PENDIENTE_INFORMACION:   "#c47f00",
-  ESCALADO_FALSIFICACION:  "#d63030",
-  SUSPENDIDO_TEMPORALMENTE:"#d63030",
-  VERIFICADO:              "#1a7f37",
-  RECHAZADO:               "#9b3320",
+  PENDIENTE_INFORMACION: "#c47f00",
+  ESCALADO_FALSIFICACION: "#d63030",
+  SUSPENDIDO_TEMPORALMENTE: "#d63030",
+  VERIFICADO: "#1a7f37",
+  RECHAZADO: "#9b3320",
 };
 
 const ETIQUETA_TIPO_DOC: Record<TipoDocumento, string> = {
   IDENTIFICACION_OFICIAL: "Identificación oficial",
-  CERTIFICADO_TECNICO:    "Certificado técnico",
-  CONSTANCIA:             "Constancia",
-  OTRO:                   "Otro",
+  CERTIFICADO_TECNICO: "Certificado técnico",
+  CONSTANCIA: "Constancia",
+  OTRO: "Otro",
 };
 
 const MOTIVOS_RECHAZO: { value: MotivoRechazo; label: string }[] = [
-  { value: "CERTIFICACIONES_VENCIDAS",   label: "Certificaciones vencidas" },
-  { value: "DOCUMENTACION_INCOMPLETA",   label: "Documentación incompleta" },
-  { value: "DATOS_NO_COINCIDEN",         label: "Datos no coinciden" },
-  { value: "FALSIFICACION_DETECTADA",    label: "Falsificación detectada" },
-  { value: "INSTITUCION_NO_RECONOCIDA",  label: "Institución no reconocida" },
-  { value: "OTRO",                       label: "Otro" },
+  { value: "CERTIFICACIONES_VENCIDAS", label: "Certificaciones vencidas" },
+  { value: "DOCUMENTACION_INCOMPLETA", label: "Documentación incompleta" },
+  { value: "DATOS_NO_COINCIDEN", label: "Datos no coinciden" },
+  { value: "FALSIFICACION_DETECTADA", label: "Falsificación detectada" },
+  { value: "INSTITUCION_NO_RECONOCIDA", label: "Institución no reconocida" },
+  { value: "OTRO", label: "Otro" },
 ];
 
 
 export function VerificacionManager({ initialData }: Props) {
   const [prestadores, setPrestadores] = useState<Prestador[]>(initialData);
   const [seleccionado, setSeleccionado] = useState<Prestador | null>(null);
-  const [loading, setLoading]     = useState(false);
-  const [mensaje, setMensaje]     = useState("");
-  const [error, setError]         = useState("");
+  const [loading, setLoading] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
 
   // Formulario de decisión
-  const [aprobado, setAprobado]             = useState<boolean | null>(null);
-  const [motivoRechazo, setMotivoRechazo]   = useState<MotivoRechazo | "">("");
+  const [aprobado, setAprobado] = useState<boolean | null>(null);
+  const [motivoRechazo, setMotivoRechazo] = useState<MotivoRechazo | "">("");
   const [detalleRechazo, setDetalleRechazo] = useState("");
-  const [observaciones, setObservaciones]   = useState("");
+  const [observaciones, setObservaciones] = useState("");
 
   // Formulario S1
   const [detalleInfo, setDetalleInfo] = useState("");
@@ -122,14 +123,10 @@ export function VerificacionManager({ initialData }: Props) {
   // Panel activo: "decision" | "s1" | "s2"
   const [panel, setPanel] = useState<"decision" | "s1" | "s2">("decision");
 
-  // ── ID del verificador/admin — en producción viene de la sesión
-  // Aquí se obtiene del header que el servidor inyecta automáticamente
-  // via la cookie de sesión. Para simplicidad usamos un placeholder
-  // que funciona porque el handler solo valida que sea un string no vacío.
-  const VERIFICADOR_ID = "sesion-actual"; // el handler lo acepta
+  const VERIFICADOR_ID = "sesion-actual";
 
   const recargar = async () => {
-    const res  = await fetch("/api/verificacion/credenciales");
+    const res = await fetch("/api/verificacion/credenciales");
     const data = await res.json() as { prestadores: Prestador[] };
     setPrestadores(data.prestadores ?? []);
   };
@@ -146,16 +143,14 @@ export function VerificacionManager({ initialData }: Props) {
     setMotivoEscalamiento("");
     setPanel("decision");
 
-    // Si ya está en revisión solo abrimos el detalle
     if (p.estadoVerificacion !== "PENDIENTE_VERIFICACION") {
       setSeleccionado(p);
       return;
     }
 
-    // Iniciar revisión (paso 2-5 del flujo normal)
     setLoading(true);
     const res = await fetch("/api/verificacion/credenciales", {
-      method:  "POST",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prestadorId: p.id, verificadorId: VERIFICADOR_ID }),
     });
@@ -176,13 +171,11 @@ export function VerificacionManager({ initialData }: Props) {
     setMensaje("Revisión iniciada correctamente.");
     await recargar();
 
-    // Abrir el prestador actualizado
-    const res2  = await fetch(`/api/verificacion/credenciales/${p.id}`);
+    const res2 = await fetch(`/api/verificacion/credenciales/${p.id}`);
     const data2 = await res2.json() as { prestador: Prestador };
     setSeleccionado(data2.prestador ?? p);
   };
 
-  // Registrar decisión (Aprobar / Rechazar)
   const registrarDecision = async () => {
     if (!seleccionado?.verificacion) return;
     if (aprobado === null) { setError("Selecciona Aprobar o Rechazar."); return; }
@@ -195,14 +188,14 @@ export function VerificacionManager({ initialData }: Props) {
     const res = await fetch(
       `/api/verificacion/credenciales/${seleccionado.verificacion.id}`,
       {
-        method:  "PATCH",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          verificadorId:  VERIFICADOR_ID,
+          verificadorId: VERIFICADOR_ID,
           aprobado,
-          motivoRechazo:  aprobado ? undefined : motivoRechazo,
+          motivoRechazo: aprobado ? undefined : motivoRechazo,
           detalleRechazo: aprobado ? undefined : detalleRechazo,
-          observaciones:  observaciones || undefined,
+          observaciones: observaciones || undefined,
         }),
       }
     );
@@ -217,7 +210,6 @@ export function VerificacionManager({ initialData }: Props) {
     await recargar();
   };
 
-  // S1: Solicitar información adicional 
   const solicitarInfo = async () => {
     if (!seleccionado?.verificacion) return;
     if (!detalleInfo.trim()) { setError("Especifica qué información se necesita."); return; }
@@ -228,7 +220,7 @@ export function VerificacionManager({ initialData }: Props) {
     const res = await fetch(
       `/api/verificacion/credenciales/${seleccionado.verificacion.id}/solicitar-info`,
       {
-        method:  "PATCH",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ verificadorId: VERIFICADOR_ID, detalle: detalleInfo }),
       }
@@ -244,7 +236,6 @@ export function VerificacionManager({ initialData }: Props) {
     await recargar();
   };
 
-  // S2: Escalar por posible falsificación 
   const escalarCaso = async () => {
     if (!seleccionado?.verificacion) return;
     if (!motivoEscalamiento.trim()) { setError("Especifica el motivo del escalamiento."); return; }
@@ -255,11 +246,11 @@ export function VerificacionManager({ initialData }: Props) {
     const res = await fetch(
       `/api/verificacion/credenciales/${seleccionado.verificacion.id}/escalar`,
       {
-        method:  "PATCH",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          verificadorId:      VERIFICADOR_ID,
-          adminId:            VERIFICADOR_ID, // mismo usuario en este prototipo
+          verificadorId: VERIFICADOR_ID,
+          adminId: VERIFICADOR_ID,
           motivoEscalamiento,
         }),
       }
@@ -270,7 +261,7 @@ export function VerificacionManager({ initialData }: Props) {
 
     if (!res.ok) { setError(data.error ?? "Error al escalar caso"); return; }
 
-    setMensaje("🚨 Caso escalado al administrador. Perfil suspendido temporalmente.");
+    setMensaje("Caso escalado al administrador. Perfil suspendido temporalmente.");
     setSeleccionado(null);
     await recargar();
   };
@@ -292,7 +283,7 @@ export function VerificacionManager({ initialData }: Props) {
             <p className="auth-summary-title">Estado actual</p>
             <ul className="auth-summary-list">
               <li>Pendientes: {prestadores.filter(p => p.estadoVerificacion === "PENDIENTE_VERIFICACION").length}</li>
-              <li>En revisión: {prestadores.filter(p => ["EN_REVISION","VERIFICACION_EN_PROCESO"].includes(p.estadoVerificacion)).length}</li>
+              <li>En revisión: {prestadores.filter(p => ["EN_REVISION", "VERIFICACION_EN_PROCESO"].includes(p.estadoVerificacion)).length}</li>
               <li>Escalados: {prestadores.filter(p => p.estadoVerificacion === "ESCALADO_FALSIFICACION").length}</li>
             </ul>
           </div>
@@ -304,7 +295,7 @@ export function VerificacionManager({ initialData }: Props) {
 
           {/* Mensajes globales */}
           {mensaje && <p className="form-alert success" style={{ marginBottom: "1.2rem" }}>{mensaje}</p>}
-          {error   && <p className="form-alert error"   style={{ marginBottom: "1.2rem" }}>{error}</p>}
+          {error && <p className="form-alert error" style={{ marginBottom: "1.2rem" }}>{error}</p>}
 
           {/* Layout: lista | detalle */}
           <div style={{ display: "grid", gridTemplateColumns: seleccionado ? "1fr 1fr" : "1fr", gap: "1.25rem", alignItems: "start" }}>
@@ -381,15 +372,34 @@ export function VerificacionManager({ initialData }: Props) {
                 {/* Cabecera */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "1.2rem" }}>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: "1.15rem", letterSpacing: "-0.02em" }}>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: "0.97rem" }}>
                       {seleccionado.usuario.nombre}
-                    </h2>
-                    <p style={{ margin: "0.2rem 0 0", fontSize: "0.87rem", color: "var(--muted)" }}>
-                      {seleccionado.usuario.correo}
                     </p>
-                    {seleccionado.verificacion?.fechaLimite && (
-                      <p style={{ margin: "0.3rem 0 0", fontSize: "0.82rem", color: "#c47f00" }}>
-                        ⏱ Límite: {new Date(seleccionado.verificacion.fechaLimite).toLocaleString("es-MX")}
+
+                    {/* Categoría de servicio */}
+                    <p style={{ margin: "0.2rem 0 0", fontSize: "0.85rem", color: "var(--muted)" }}>
+                      {seleccionado.categoria?.nombre
+                        ? `Categoría: ${seleccionado.categoria.nombre}`
+                        : <span style={{ color: "#c47f00" }}>Sin categoría asignada</span>
+                      }
+                    </p>
+
+                    {/* Fecha de registro */}
+                    <p style={{ margin: "0.2rem 0 0", fontSize: "0.82rem", color: "var(--muted)" }}>
+                      Registro: {new Date(seleccionado.createdAt).toLocaleDateString("es-MX", {
+                        day: "2-digit", month: "short", year: "numeric"
+                      })}
+                    </p>
+
+                    {/* Documentos cargados */}
+                    <p style={{ margin: "0.2rem 0 0", fontSize: "0.82rem", color: "var(--muted)" }}>
+                      {seleccionado.documentos.length} documento{seleccionado.documentos.length !== 1 ? "s" : ""} cargado{seleccionado.documentos.length !== 1 ? "s" : ""}
+                    </p>
+
+                    {/* Oficios */}
+                    {seleccionado.oficios.length > 0 && (
+                      <p style={{ margin: "0.2rem 0 0", fontSize: "0.82rem", color: "var(--muted)" }}>
+                        {seleccionado.oficios.map(o => o.nombreOficio).join(", ")}
                       </p>
                     )}
                   </div>
@@ -468,8 +478,8 @@ export function VerificacionManager({ initialData }: Props) {
                 <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", borderBottom: "1px solid #e5e5eb", paddingBottom: "0.75rem" }}>
                   {[
                     { key: "decision", label: "Decisión" },
-                    { key: "s1",       label: "S1: Pedir info" },
-                    { key: "s2",       label: "S2: Escalar" },
+                    { key: "s1", label: "S1: Pedir info" },
+                    { key: "s2", label: "S2: Escalar" },
                   ].map((tab) => (
                     <button
                       key={tab.key}
@@ -482,8 +492,8 @@ export function VerificacionManager({ initialData }: Props) {
                         fontWeight: 560,
                         cursor: "pointer",
                         borderColor: panel === tab.key ? "var(--accent)" : "#d2d2d7",
-                        background:  panel === tab.key ? "var(--accent)" : "#fff",
-                        color:       panel === tab.key ? "#fff" : "var(--foreground)",
+                        background: panel === tab.key ? "var(--accent)" : "#fff",
+                        color: panel === tab.key ? "#fff" : "var(--foreground)",
                       }}
                     >
                       {tab.label}
@@ -503,8 +513,8 @@ export function VerificacionManager({ initialData }: Props) {
                         }
                       >
                         <option value="">— Selecciona —</option>
-                        <option value="true">✅ Aprobar</option>
-                        <option value="false">❌ Rechazar</option>
+                        <option value="true"> Aprobar</option>
+                        <option value="false"> Rechazar</option>
                       </select>
                     </label>
 
@@ -582,7 +592,7 @@ export function VerificacionManager({ initialData }: Props) {
                 {panel === "s2" && (
                   <div style={{ display: "grid", gap: "0.9rem" }}>
                     <div className="form-alert" style={{ background: "#fff4f2", border: "1px solid #ffd3cb", color: "#9b3320", borderRadius: "0.875rem", padding: "0.75rem 1rem", fontSize: "0.88rem", margin: 0 }}>
-                       Esto suspende el perfil temporalmente y notifica al administrador.
+                      Esto suspende el perfil temporalmente y notifica al administrador.
                     </div>
                     <label className="form-field">
                       <span>Motivo del escalamiento</span>

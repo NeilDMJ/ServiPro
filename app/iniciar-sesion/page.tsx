@@ -8,13 +8,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 type LoginFormState = {
   correo: string;
   password: string;
-  tipoUsuario: "cliente" | "trabajador" | "administrador";
+  tipoUsuario: "cliente" | "trabajador" | "administrador" | "verificador";
 };
 
 const userTypeOptions = [
   { value: "cliente", label: "Cliente" },
   { value: "trabajador", label: "Trabajador" },
   { value: "administrador", label: "Administrador" },
+  { value: "verificador", label: "Verificador" },
 ] as const;
 
 export default function IniciarSesionPage() {
@@ -35,6 +36,7 @@ export default function IniciarSesionPage() {
     if (
       tipo === "cliente" ||
       tipo === "trabajador" ||
+      tipo === "verificador" ||
       tipo === "administrador"
     ) {
       setForm((current) => ({ ...current, tipoUsuario: tipo }));
