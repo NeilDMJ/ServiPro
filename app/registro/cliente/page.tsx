@@ -86,24 +86,14 @@ export default function RegistroClientePage() {
   return (
     <>
       <section className="page-hero auth-hero">
-        <div className="container auth-hero-grid">
-          <div>
-            <span className="eyebrow eyebrow-dark">Registro de cliente</span>
-            <h1>Crea una cuenta para solicitar servicios del hogar.</h1>
-            <p>
-              Este formulario registra el usuario base y el perfil de cliente en
-              la base de datos, incluyendo la dirección inicial para futuras
-              órdenes.
-            </p>
-          </div>
-          <div className="auth-summary-card">
-            <p className="auth-summary-title">Campos conectados al modelo</p>
-            <ul className="auth-summary-list">
-              <li>Usuario: nombre, correo, teléfono y contraseña.</li>
-              <li>Cliente: dirección predeterminada.</li>
-              <li>Rol asignado automáticamente: CLIENTE.</li>
-            </ul>
-          </div>
+        <div className="container">
+          <span className="eyebrow eyebrow-dark">Registro de cliente</span>
+          <h1>Crea una cuenta para solicitar servicios del hogar.</h1>
+          <p>
+            Este formulario registra el usuario base y el perfil de cliente en
+            la base de datos, incluyendo la dirección inicial para futuras
+            órdenes.
+          </p>
         </div>
       </section>
 

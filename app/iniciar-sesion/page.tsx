@@ -98,25 +98,14 @@ function LoginFormComponent() {
   return (
     <>
       <section className="page-hero auth-hero">
-        <div className="container auth-hero-grid">
-          <div>
-            <span className="eyebrow eyebrow-dark">Inicio de sesión</span>
-            <h1>Valida tus credenciales antes de entrar al flujo operativo.</h1>
-            <p>
-              El acceso verifica correo, contraseña y compatibilidad con el tipo
-              de usuario seleccionado. Si la combinación no corresponde al rol,
-              el sistema rechaza la entrada.
-            </p>
-          </div>
-          <div className="auth-summary-card">
-            <p className="auth-summary-title">Validaciones activas</p>
-            <ul className="auth-summary-list">
-              <li>Credenciales obligatorias.</li>
-              <li>Comparación segura contra `passwordHash`.</li>
-              <li>Verificación del rol contra el tipo de usuario elegido.</li>
-              <li>Validación de estado de verificación para prestadores.</li>
-            </ul>
-          </div>
+        <div className="container">
+          <span className="eyebrow eyebrow-dark">Inicio de sesión</span>
+          <h1>Valida tus credenciales antes de entrar al flujo operativo.</h1>
+          <p>
+            El acceso verifica correo, contraseña y compatibilidad con el tipo
+            de usuario seleccionado. Si la combinación no corresponde al rol,
+            el sistema rechaza la entrada.
+          </p>
         </div>
       </section>
 

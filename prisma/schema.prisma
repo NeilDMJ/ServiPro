@@ -41,16 +41,48 @@ enum EstadoPago {
   RECHAZADO
 }
 
+enum EstadoCategoria {
+  ACTIVA
+  INACTIVA
+}
+
+enum EstadoVerificacion {
+  PENDIENTE_VERIFICACION
+  EN_REVISION
+  VERIFICACION_EN_PROCESO
+  PENDIENTE_INFORMACION
+  ESCALADO_FALSIFICACION
+  SUSPENDIDO_TEMPORALMENTE
+  VERIFICADO
+  RECHAZADO
+}
+
+enum TipoDocumento {
+  IDENTIFICACION_OFICIAL
+  CERTIFICADO_TECNICO
+  CONSTANCIA
+  OTRO
+}
+
+enum MotivoRechazo {
+  CERTIFICACIONES_VENCIDAS
+  DOCUMENTACION_INCOMPLETA
+  DATOS_NO_COINCIDEN
+  FALSIFICACION_DETECTADA
+  INSTITUCION_NO_RECONOCIDA
+  OTRO
+}
+
 model Usuario {
-  id           String @id @default(uuid())
+  id           String  @id @default(uuid())
   nombre       String
-  correo       String @unique
+  correo       String  @unique
   passwordHash String
   telefono     String?
   role         Role
 
-  cliente   Cliente?
-  prestador Prestador?
+  cliente             Cliente?
+  prestador           Prestador?
   empresaAdministrada Empresa? @relation("EmpresaAdmin")
 
   createdAt DateTime @default(now())
@@ -62,12 +94,11 @@ model Usuario {
 model Cliente {
   id String @id @default(uuid())
 
-  usuarioId String @unique
+  usuarioId String  @unique
   usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   direccionDefault String?
-
-  ordenes Orden[]
+  ordenes          Orden[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,15 +107,14 @@ model Cliente {
 model Empresa {
   id String @id @default(uuid())
 
-  rfc            String @unique
-  razonSocial    String
+  rfc             String  @unique
+  razonSocial     String
   direccionFiscal String
+  ramo            String?
+  ubicacion       String?
 
-  adminUsuarioId String? @unique
+  adminUsuarioId String?  @unique
   adminUsuario   Usuario? @relation("EmpresaAdmin", fields: [adminUsuarioId], references: [id], onDelete: SetNull)
-
-  ramo          String?
-  ubicacion     String?
 
   prestadores Prestador[]
 
@@ -95,23 +125,27 @@ model Empresa {
 model Prestador {
   id String @id @default(uuid())
 
-  usuarioId String @unique
+  usuarioId String  @unique
   usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   calificacionPromedio Float   @default(0)
   isDisponible         Boolean @default(true)
   tipoRegistro         TipoRegistroPrestador
 
-  estadoVerificacion EstadoVerificacionPrestador @default(PENDIENTE_DE_VERIFICACION)
-  documentos         Documento[]
-  fechaVerificacion  DateTime?
-  notasVerificacion  String?
-
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
 
+  categoriaId String?
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
   oficios Servicio[]
   ordenes Orden[]
+
+  // ── CU-02: Verificación de Credenciales ──────────────────
+  estadoVerificacion   EstadoVerificacion @default(PENDIENTE_VERIFICACION)
+  intentosVerificacion Int                @default(0)
+  documentos           Documento[]
+  verificacion         VerificacionCredenciales?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -121,28 +155,10 @@ model Prestador {
   @@index([estadoVerificacion])
 }
 
-model Documento {
-  id String @id @default(uuid())
-
-  nombreArchivo String
-  tipoDocumento String // ej: "cedula", "certificado", "comprobante_domicilio"
-  rutaArchivo   String
-  estado        String @default("CARGADO") // CARGADO, VALIDADO, RECHAZADO
-
-  prestadorId String
-  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([prestadorId])
-  @@index([estado])
-}
-
 model Servicio {
   id String @id @default(uuid())
 
-  nombreOficio String @unique
+  nombreOficio String  @unique
   descripcion  String?
   tarifaBase   Float
 
@@ -156,9 +172,9 @@ model Servicio {
 model Orden {
   id String @id @default(uuid())
 
-  fechaCreacion DateTime @default(now())
-  fechaAgendada DateTime?
-  estado        EstadoOrden @default(PENDIENTE)
+  fechaCreacion     DateTime    @default(now())
+  fechaAgendada     DateTime?
+  estado            EstadoOrden @default(PENDIENTE)
   direccionServicio String
 
   clienteId String
@@ -184,9 +200,9 @@ model Orden {
 model Pago {
   id String @id @default(uuid())
 
-  monto     Float
+  monto      Float
   metodoPago MetodoPago
-  estado    EstadoPago @default(PENDIENTE)
+  estado     EstadoPago @default(PENDIENTE)
 
   ordenId String @unique
   orden   Orden  @relation(fields: [ordenId], references: [id], onDelete: Cascade)
@@ -200,15 +216,116 @@ model Pago {
 model Factura {
   id String @id @default(uuid())
 
-  folioFiscal String @unique
-  rfcEmisor   String
-  rfcReceptor String
+  folioFiscal  String   @unique
+  rfcEmisor    String
+  rfcReceptor  String
   fechaEmision DateTime @default(now())
-  urlXML      String
+  urlXML       String
 
   pagoId String @unique
   pago   Pago   @relation(fields: [pagoId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Categoria {
+  id          String          @id @default(uuid())
+  nombre      String          @unique
+  descripcion String
+  icono       String?
+  estado      EstadoCategoria @default(ACTIVA)
+
+  prestadores  Prestador[]
+  logAuditoria LogAuditoria[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estado])
+}
+
+// ─── LogAuditoria ──────────────────────────────────
+
+model LogAuditoria {
+  id        String   @id @default(uuid())
+  accion    String   // "CREAR"|"EDITAR"|"ELIMINAR"|"INICIADA"|"APROBADA"|"RECHAZADA"|"ESCALADA"...
+  timestamp DateTime @default(now())
+  detalle   String?
+
+  // ── Contexto: Categorías (CU-03) ─────────────────────────────────
+  entidad   String?  // "Categoria" | null
+  entidadId String?  // id del registro afectado | null
+  usuarioId String?  // quien ejecutó la acción (cualquier rol) | null
+
+  categoriaId String?
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
+  // ── Contexto: Verificación de Credenciales (CU-02) ───────
+  realizadoPor String?  // id del verificador/admin/sistema | null
+  rol          String?  // "VERIFICADOR" | "ADMINISTRADOR" | "SISTEMA" | null
+
+  verificacionId String?
+  verificacion   VerificacionCredenciales? @relation(fields: [verificacionId], references: [id], onDelete: Cascade)
+
+  @@index([verificacionId])
+  @@index([timestamp])
+  @@index([categoriaId])
+}
+
+
+model Documento {
+  id          String    @id @default(uuid())
+  prestadorId String
+  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
+
+  tipo          TipoDocumento
+  nombreArchivo String
+  urlArchivo    String
+  mimeType      String
+
+  esAutentico    Boolean?
+  estaVigente    Boolean?
+  datosCoinciden Boolean?
+  observacion    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([prestadorId])
+}
+
+model VerificacionCredenciales {
+  id          String    @id @default(uuid())
+  prestadorId String    @unique
+  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
+
+  estado  EstadoVerificacion @default(PENDIENTE_VERIFICACION)
+  intento Int                @default(1)
+
+  verificadorId String?
+
+  aprobado       Boolean?
+  motivoRechazo  MotivoRechazo?
+  detalleRechazo String?
+  observaciones  String?
+
+  fechaIniciada DateTime?
+  fechaDecision DateTime?
+  fechaLimite   DateTime?
+
+  escaladoAdminId    String?
+  fechaEscalamiento  DateTime?
+  motivoEscalamiento String?
+
+  infAdicionalSolicitada Boolean @default(false)
+  infAdicionalDetalle    String?
+
+  logAuditoria LogAuditoria[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([estado])
+  @@index([verificadorId])
 }

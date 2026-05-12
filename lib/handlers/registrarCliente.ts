@@ -17,10 +17,10 @@ type Payload = {
   password?: string;
   nombre?: string;
   telefono?: string;
-  oficios?: string[];
+  direccionDefault?: string;
 };
 
-export async function handleRegistrarPrestadorIndependiente(request: NextRequest) {
+export async function handleRegistrarCliente(request: NextRequest) {
   let body: unknown;
   try {
     body = await request.json();
@@ -34,7 +34,7 @@ export async function handleRegistrarPrestadorIndependiente(request: NextRequest
   const password = getString(payload.password);
   const nombre = getString(payload.nombre);
   const telefono = getString(payload.telefono);
-  const oficios = Array.isArray(payload.oficios) ? payload.oficios : undefined;
+  const direccionDefault = getString(payload.direccionDefault);
 
   if (!correo) {
     return Response.json({ error: "correo es requerido" }, { status: 400 });
@@ -49,16 +49,6 @@ export async function handleRegistrarPrestadorIndependiente(request: NextRequest
     return Response.json({ error: "nombre es requerido" }, { status: 400 });
   }
 
-  const oficioConnectOrCreate = Array.isArray(oficios)
-    ? oficios
-        .map((o) => getString(o))
-        .filter((o): o is string => Boolean(o))
-        .map((nombreOficio) => ({
-          where: { nombreOficio: nombreOficio.trim() },
-          create: { nombreOficio: nombreOficio.trim(), tarifaBase: 0 },
-        }))
-    : undefined;
-
   try {
     const passwordHash = hashPassword(password);
 
@@ -66,18 +56,12 @@ export async function handleRegistrarPrestadorIndependiente(request: NextRequest
       data: {
         correo: correo.toLowerCase(),
         passwordHash,
-        role: "PRESTADOR",
+        role: "CLIENTE",
         nombre,
         telefono,
-        prestador: {
+        cliente: {
           create: {
-            tipoRegistro: "INDEPENDIENTE",
-            empresaId: null,
-            calificacionPromedio: 0,
-            isDisponible: true,
-            oficios: oficioConnectOrCreate
-              ? { connectOrCreate: oficioConnectOrCreate }
-              : undefined,
+            direccionDefault,
           },
         },
       },
@@ -85,9 +69,7 @@ export async function handleRegistrarPrestadorIndependiente(request: NextRequest
         id: true,
         correo: true,
         role: true,
-        prestador: {
-          select: { id: true, tipoRegistro: true, oficios: { select: { nombreOficio: true } } },
-        },
+        cliente: { select: { id: true, direccionDefault: true } },
       },
     });
 
