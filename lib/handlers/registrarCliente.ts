@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "@/lib/auth";
+
+// [UC-01] Registro seguro de usuarios con hash de contrasena antes de persistir.
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -8,10 +10,6 @@ function isNonEmptyString(value: unknown): value is string {
 
 function getString(value: unknown): string | undefined {
   return isNonEmptyString(value) ? value.trim() : undefined;
-}
-
-function hashPassword(password: string): string {
-  return bcrypt.hashSync(password, 10);
 }
 
 type Payload = {

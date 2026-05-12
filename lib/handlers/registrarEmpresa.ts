@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "@/lib/auth";
+
+// [UC-01] Registro seguro de usuarios con hash de contrasena antes de persistir.
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -63,7 +65,7 @@ export async function handleRegistrarEmpresa(request: NextRequest) {
   }
 
   try {
-    const passwordHash = bcrypt.hashSync(passwordAdmin, 10);
+    const passwordHash = hashPassword(passwordAdmin);
 
     const empresa = await prisma.$transaction(
       async (tx: TransactionClient) => {

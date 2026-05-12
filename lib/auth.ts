@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+// [UC-01] Autenticacion: generar y validar JWT de sesion para rutas protegidas.
+
 export type AppRole = "CLIENTE" | "PRESTADOR" | "COMPANY_ADMIN";
 
 const SESSION_SECRET =
@@ -62,6 +64,55 @@ function createSessionSignature(value: string): string {
   return createHmac("sha256", SESSION_SECRET).update(value).digest("base64url");
 }
 
+const JWT_HEADER_BASE64 = Buffer.from(
+  JSON.stringify({ alg: "HS256", typ: "JWT" })
+).toString("base64url");
+
+function verifySignedValue(value: string, signature: string): boolean {
+  const expectedSignature = createSessionSignature(value);
+  const received = Buffer.from(signature);
+  const expected = Buffer.from(expectedSignature);
+
+  if (received.length !== expected.length) {
+    return false;
+  }
+
+  return timingSafeEqual(received, expected);
+}
+
+function parseSessionPayload(encodedPayload: string): SessionPayload | null {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString("utf8")
+    ) as SessionPayload;
+
+    if (
+      typeof payload.sub !== "string" ||
+      typeof payload.nombre !== "string" ||
+      typeof payload.correo !== "string" ||
+      typeof payload.exp !== "number"
+    ) {
+      return null;
+    }
+
+    if (![
+      "CLIENTE",
+      "PRESTADOR",
+      "COMPANY_ADMIN",
+    ].includes(payload.role)) {
+      return null;
+    }
+
+    if (payload.exp <= Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export function createSessionToken(payload: {
   sub: string;
   role: AppRole;
@@ -75,9 +126,10 @@ export function createSessionToken(payload: {
     })
   ).toString("base64url");
 
-  const signature = createSessionSignature(body);
+  const signingInput = `${JWT_HEADER_BASE64}.${body}`;
+  const signature = createSessionSignature(signingInput);
 
-  return `${body}.${signature}`;
+  return `${signingInput}.${signature}`;
 }
 
 export function verifySessionToken(token?: string): SessionPayload | null {
@@ -85,50 +137,57 @@ export function verifySessionToken(token?: string): SessionPayload | null {
     return null;
   }
 
-  const [body, signature] = token.split(".");
+  const parts = token.split(".");
 
-  if (!body || !signature) {
-    return null;
-  }
-
-  const expectedSignature = createSessionSignature(body);
-  const received = Buffer.from(signature);
-  const expected = Buffer.from(expectedSignature);
-
-  if (received.length !== expected.length) {
-    return null;
-  }
-
-  if (!timingSafeEqual(received, expected)) {
-    return null;
-  }
-
-  try {
-    const payload = JSON.parse(
-      Buffer.from(body, "base64url").toString("utf8")
-    ) as SessionPayload;
-
-    if (
-      typeof payload.sub !== "string" ||
-      typeof payload.nombre !== "string" ||
-      typeof payload.correo !== "string" ||
-      typeof payload.exp !== "number"
-    ) {
+  // JWT actual: header.payload.signature
+  if (parts.length === 3) {
+    const [header, payload, signature] = parts;
+    if (!header || !payload || !signature) {
       return null;
     }
 
-    if (!["CLIENTE", "PRESTADOR", "COMPANY_ADMIN"].includes(payload.role)) {
+    const signingInput = `${header}.${payload}`;
+    if (!verifySignedValue(signingInput, signature)) {
       return null;
     }
 
-    if (payload.exp <= Math.floor(Date.now() / 1000)) {
+    try {
+      const decodedHeader = JSON.parse(
+        Buffer.from(header, "base64url").toString("utf8")
+      ) as { alg?: string; typ?: string };
+      if (decodedHeader.alg !== "HS256" || decodedHeader.typ !== "JWT") {
+        return null;
+      }
+    } catch {
       return null;
     }
 
-    return payload;
-  } catch {
-    return null;
+    return parseSessionPayload(payload);
   }
+
+  // Compatibilidad legacy: body.signature
+  if (parts.length === 2) {
+    const [legacyPayload, legacySignature] = parts;
+    if (!legacyPayload || !legacySignature) {
+      return null;
+    }
+
+    if (!verifySignedValue(legacyPayload, legacySignature)) {
+      return null;
+    }
+
+    return parseSessionPayload(legacyPayload);
+  }
+
+  return null;
+}
+
+export function isValidSessionJwt(token?: string): boolean {
+  if (!token) {
+    return false;
+  }
+
+  return verifySessionToken(token) !== null;
 }
 
 export function getSessionCookieOptions() {

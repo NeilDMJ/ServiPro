@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "@/lib/auth";
+
+// [UC-01] Registro seguro de usuarios con hash de contrasena antes de persistir.
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -58,7 +60,7 @@ export async function handleRegistrarPrestadorIndependiente(request: NextRequest
     : undefined;
 
   try {
-    const passwordHash = bcrypt.hashSync(password, 10);
+    const passwordHash = hashPassword(password);
 
     const usuario = await prisma.usuario.create({
       data: {
