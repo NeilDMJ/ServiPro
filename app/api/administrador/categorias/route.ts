@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+// [UC-03] Endpoint CRUD de categorías/oficios — rutas GET y POST
 import { prisma } from "@/lib/prisma";
 import { requireSessionForPanel } from "@/lib/session";
 

@@ -10,24 +10,12 @@ export default async function CuentaPage() {
   return (
     <>
       <section className="page-hero auth-hero">
-        <div className="container auth-hero-grid">
-          <div>
-            <span className="eyebrow eyebrow-dark">Cuenta activa</span>
-            <h1>Tu sesión está validada y lista para operar.</h1>
-            <p>
-              Este resumen confirma el usuario autenticado, el rol asignado en la
-              base de datos y el acceso al panel correspondiente.
-            </p>
-          </div>
-          <div className="auth-summary-card">
-            <p className="auth-summary-title">Resumen de sesión</p>
-            <ul className="auth-summary-list">
-              <li>Nombre: {session.nombre}</li>
-              <li>Correo: {session.correo}</li>
-              <li>Rol: {session.role}</li>
-              <li>Tipo de usuario: {getUserTypeFromRole(session.role)}</li>
-            </ul>
-          </div>
+        <div className="container">
+          <span className="eyebrow eyebrow-dark">Cuenta activa</span>
+          <h1>Bienvenido, {session.nombre}.</h1>
+          <p>
+            Estás conectado como <strong>{getUserTypeFromRole(session.role)}</strong>. Accede a tu panel o administra tu sesión desde aquí.
+          </p>
         </div>
       </section>
 

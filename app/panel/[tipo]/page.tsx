@@ -51,20 +51,10 @@ export default async function PanelPage({ params }: PanelPageProps) {
   return (
     <>
       <section className="page-hero auth-hero">
-        <div className="container auth-hero-grid">
-          <div>
-            <span className="eyebrow eyebrow-dark">{session.role}</span>
-            <h1>{content.title}</h1>
-            <p>{content.description}</p>
-          </div>
-          <div className="auth-summary-card">
-            <p className="auth-summary-title">Sesión actual</p>
-            <ul className="auth-summary-list">
-              <li>Usuario: {session.nombre}</li>
-              <li>Correo: {session.correo}</li>
-              <li>Acceso autorizado para: {tipo}</li>
-            </ul>
-          </div>
+        <div className="container">
+          <span className="eyebrow eyebrow-dark">{session.role}</span>
+          <h1>{content.title}</h1>
+          <p>{content.description}</p>
         </div>
       </section>
 

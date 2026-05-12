@@ -1,7 +1,10 @@
 "use client";
+"use client";
+// [UC-03] Gestión CRUD de categorías/oficios — componente cliente
+
 import { useState } from "react";
 
-// 🔹 Tipos base
+// ── Tipos ──────────────────────────────────────────────────────────────────
 type Estado = "ACTIVA" | "INACTIVA";
 
 type Categoria = {
@@ -30,6 +33,7 @@ const EMPTY_FORM: FormType = {
   estado: "ACTIVA",
 };
 
+// ── Componente ─────────────────────────────────────────────────────────────
 export function CategoriasManager({ initialData }: Props) {
   const [categorias, setCategorias] = useState<Categoria[]>(initialData);
   const [form, setForm] = useState<FormType>(EMPTY_FORM);
@@ -42,12 +46,15 @@ export function CategoriasManager({ initialData }: Props) {
     setForm(EMPTY_FORM);
     setEditando(null);
     setError("");
+    setMensaje("");
   };
 
   const recargar = async () => {
     const res = await fetch("/api/administrador/categorias");
-    const data = await res.json();
-    setCategorias(data);
+    if (res.ok) {
+      const data: Categoria[] = await res.json();
+      setCategorias(data);
+    }
   };
 
   const handleSubmit = async () => {
@@ -58,7 +65,6 @@ export function CategoriasManager({ initialData }: Props) {
     const url = editando
       ? `/api/administrador/categorias/${editando}`
       : "/api/administrador/categorias";
-
     const method = editando ? "PUT" : "POST";
 
     const res = await fetch(url, {
@@ -75,7 +81,7 @@ export function CategoriasManager({ initialData }: Props) {
       return;
     }
 
-    setMensaje(editando ? "Categoría actualizada" : "Categoría creada");
+    setMensaje(editando ? "Categoría actualizada." : "Categoría creada.");
     resetForm();
     recargar();
   };
@@ -90,6 +96,7 @@ export function CategoriasManager({ initialData }: Props) {
     });
     setError("");
     setMensaje("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleEliminar = async (cat: Categoria) => {
@@ -99,150 +106,227 @@ export function CategoriasManager({ initialData }: Props) {
     const res = await fetch(`/api/administrador/categorias/${cat.id}`, {
       method: "DELETE",
     });
-
     const data = await res.json();
     setLoading(false);
-    setMensaje(data.mensaje);
+    setMensaje(data.mensaje ?? "Categoría eliminada.");
     recargar();
   };
 
   return (
-    <div>
-      {/* Formulario */}
-      <div
-        style={{
-          border: "1px solid #ccc",
-          padding: 20,
-          borderRadius: 8,
-          marginBottom: 24,
-        }}
-      >
-        <h2>{editando ? "Editar Categoría" : "Nueva Categoría"}</h2>
-
-        <label>Nombre *</label>
-        <input
-          value={form.nombre}
-          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-          placeholder="Ej: Plomería"
-          style={{ display: "block", width: "100%", marginBottom: 8 }}
-        />
-
-        <label>Descripción * (20-200 caracteres)</label>
-        <textarea
-          value={form.descripcion}
-          onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-          placeholder="Describe la categoría..."
-          rows={3}
-          style={{ display: "block", width: "100%", marginBottom: 8 }}
-        />
-        <small>{form.descripcion.length}/200 caracteres</small>
-
-        <label>Icono (URL o emoji)</label>
-        <input
-          value={form.icono}
-          onChange={(e) => setForm({ ...form, icono: e.target.value })}
-          placeholder="🔧 o URL de imagen"
-          style={{ display: "block", width: "100%", marginBottom: 8 }}
-        />
-
-        <label>Estado</label>
-        <select
-          value={form.estado}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "ACTIVA" || value === "INACTIVA") {
-              setForm({ ...form, estado: value });
-            }
-          }}
-          style={{ display: "block", marginBottom: 12 }}
-        >
-          <option value="ACTIVA">Activa</option>
-          <option value="INACTIVA">Inactiva</option>
-        </select>
-
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {mensaje && <p style={{ color: "green" }}>{mensaje}</p>}
-
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="button-primary"
-        >
-          {loading ? "Guardando..." : editando ? "Guardar cambios" : "Crear categoría"}
-        </button>
-
-        {editando && (
-          <button onClick={resetForm} style={{ marginLeft: 8 }}>
-            Cancelar
-          </button>
-        )}
+    <>
+      {/* ── Cabecera ──────────────────────────────────────────── */}
+      <div style={{ marginBottom: "1.8rem" }}>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: 700, letterSpacing: "-0.04em", margin: 0 }}>
+          Gestión de categorías
+        </h1>
+        <p style={{ color: "var(--muted)", marginTop: "0.4rem", fontSize: "0.97rem" }}>
+          Alta, edición y baja de categorías de servicios del hogar.
+        </p>
       </div>
 
-      {/* Tabla */}
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ background: "#f5f5f5" }}>
-            <th style={{ padding: 8, textAlign: "left" }}>Nombre</th>
-            <th style={{ padding: 8 }}>Descripción</th>
-            <th style={{ padding: 8 }}>Prestadores</th>
-            <th style={{ padding: 8 }}>Estado</th>
-            <th style={{ padding: 8 }}>Fecha creación</th>
-            <th style={{ padding: 8 }}>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categorias.map((cat) => (
-            <tr key={cat.id} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={{ padding: 8 }}>
-                {cat.icono} {cat.nombre}
-              </td>
-              <td style={{ padding: 8, fontSize: 13, color: "#555" }}>
-                {cat.descripcion.substring(0, 60)}...
-              </td>
-              <td style={{ padding: 8, textAlign: "center" }}>
-                {cat._count.prestadores}
-              </td>
-              <td style={{ padding: 8 }}>
-                <span style={{ color: cat.estado === "ACTIVA" ? "green" : "gray" }}>
-                  {cat.estado}
-                </span>
-              </td>
-              <td style={{ padding: 8, fontSize: 13, color: "#555" }}>
-                {new Date(cat.createdAt).toLocaleDateString("es-MX", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </td>
-              <td style={{ padding: 8 }}>
-                <button
-                  onClick={() => handleEditar(cat)}
-                  style={{ marginRight: 4 }}
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleEliminar(cat)}
-                  style={{ color: "red" }}
-                >
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          ))}
+      {/* ── Formulario ────────────────────────────────────────── */}
+      <div className="auth-form-card" style={{ marginBottom: "2rem" }}>
+        <div className="auth-form-header">
+          <h2>{editando ? "Editar categoría" : "Nueva categoría"}</h2>
+          <p>
+            {editando
+              ? "Modifica los datos y guarda los cambios."
+              : "Completa los campos para registrar una nueva categoría."}
+          </p>
+        </div>
 
-          {categorias.length === 0 && (
-            <tr>
-              <td
-                colSpan={6}
-                style={{ textAlign: "center", padding: 20, color: "#999" }}
-              >
-                No hay categorías registradas
-              </td>
-            </tr>
+        {error   && <p className="form-alert error">{error}</p>}
+        {mensaje && <p className="form-alert success">{mensaje}</p>}
+
+        <div className="form-grid two-columns" style={{ marginTop: "1.2rem" }}>
+          <label className="form-field">
+            <span>Nombre *</span>
+            <input
+              type="text"
+              value={form.nombre}
+              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+              placeholder="Ej: Plomería"
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Icono (emoji o URL)</span>
+            <input
+              type="text"
+              value={form.icono}
+              onChange={(e) => setForm({ ...form, icono: e.target.value })}
+              placeholder="🔧"
+            />
+          </label>
+
+          <label className="form-field form-field-full">
+            <span>
+              Descripción *{" "}
+              <small style={{ fontWeight: 400, color: "var(--muted)" }}>
+                ({form.descripcion.length}/200 car.)
+              </small>
+            </span>
+            <textarea
+              value={form.descripcion}
+              onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+              placeholder="Describe el tipo de servicios que agrupa esta categoría…"
+              rows={3}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Estado</span>
+            <select
+              value={form.estado}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "ACTIVA" || v === "INACTIVA") setForm({ ...form, estado: v });
+              }}
+            >
+              <option value="ACTIVA">Activa</option>
+              <option value="INACTIVA">Inactiva</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="form-actions-row">
+          <button
+            className="button-primary button-submit"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? "Guardando…" : editando ? "Guardar cambios" : "Crear categoría"}
+          </button>
+          {editando && (
+            <button className="button-secondary" onClick={resetForm}>
+              Cancelar
+            </button>
           )}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </div>
+
+      {/* ── Tabla de categorías ───────────────────────────────── */}
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "1.2rem 1.4rem", borderBottom: "1px solid var(--line)" }}>
+          <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 650 }}>
+            Categorías registradas{" "}
+            <span style={{ color: "var(--muted)", fontWeight: 400 }}>({categorias.length})</span>
+          </h3>
+        </div>
+
+        {categorias.length === 0 ? (
+          <p style={{ textAlign: "center", color: "var(--muted)", padding: "2.5rem 1rem" }}>
+            No hay categorías registradas.
+          </p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.93rem" }}>
+              <thead>
+                <tr style={{ background: "var(--background)" }}>
+                  {["Nombre", "Descripción", "Prestadores", "Estado", "Creada", "Acciones"].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        padding: "0.7rem 1rem",
+                        textAlign: "left",
+                        fontWeight: 600,
+                        fontSize: "0.83rem",
+                        color: "var(--muted)",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        borderBottom: "1px solid var(--line)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {categorias.map((cat, i) => (
+                  <tr
+                    key={cat.id}
+                    style={{
+                      borderBottom: i < categorias.length - 1 ? "1px solid var(--line)" : "none",
+                      background: editando === cat.id ? "rgba(0,113,227,0.04)" : "transparent",
+                    }}
+                  >
+                    <td style={{ padding: "0.8rem 1rem", fontWeight: 560 }}>
+                      {cat.icono && <span style={{ marginRight: "0.4rem" }}>{cat.icono}</span>}
+                      {cat.nombre}
+                    </td>
+                    <td style={{ padding: "0.8rem 1rem", color: "var(--muted)", maxWidth: 260 }}>
+                      {cat.descripcion.length > 70
+                        ? cat.descripcion.substring(0, 70) + "…"
+                        : cat.descripcion}
+                    </td>
+                    <td style={{ padding: "0.8rem 1rem", textAlign: "center" }}>
+                      {cat._count.prestadores}
+                    </td>
+                    <td style={{ padding: "0.8rem 1rem" }}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.35rem",
+                          fontSize: "0.82rem",
+                          fontWeight: 600,
+                          padding: "0.2rem 0.65rem",
+                          borderRadius: "999px",
+                          background: cat.estado === "ACTIVA" ? "#f2fbf4" : "#f5f5f7",
+                          color: cat.estado === "ACTIVA" ? "#1d6c32" : "var(--muted)",
+                          border: `1px solid ${cat.estado === "ACTIVA" ? "#c8e8ce" : "var(--line)"}`,
+                        }}
+                      >
+                        {cat.estado === "ACTIVA" ? "● Activa" : "○ Inactiva"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "0.8rem 1rem", color: "var(--muted)", whiteSpace: "nowrap" }}>
+                      {new Date(cat.createdAt).toLocaleDateString("es-MX", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td style={{ padding: "0.8rem 1rem", whiteSpace: "nowrap" }}>
+                      <button
+                        className="button-secondary"
+                        style={{
+                          marginRight: "0.5rem",
+                          minHeight: "auto",
+                          padding: "0.3rem 0.8rem",
+                          fontSize: "0.85rem",
+                        }}
+                        onClick={() => handleEditar(cat)}
+                        disabled={loading}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        style={{
+                          background: "transparent",
+                          border: "1px solid #ffd3cb",
+                          color: "#9b3320",
+                          borderRadius: "999px",
+                          padding: "0.3rem 0.8rem",
+                          fontSize: "0.85rem",
+                          cursor: "pointer",
+                          fontWeight: 560,
+                        }}
+                        onClick={() => handleEliminar(cat)}
+                        disabled={loading}
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

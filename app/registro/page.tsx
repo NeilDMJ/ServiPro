@@ -39,24 +39,14 @@ export default function RegistroPage() {
   return (
     <>
       <section className="page-hero auth-hero">
-        <div className="container auth-hero-grid">
-          <div>
-            <span className="eyebrow eyebrow-dark">Acceso y registro</span>
-            <h1>Selecciona el tipo de usuario con el que vas a entrar.</h1>
-            <p>
-              El flujo cambia según el rol. Los clientes crean cuenta para
-              contratar servicios y los perfiles operativos acceden con sus
-              credenciales existentes.
-            </p>
-          </div>
-          <div className="auth-summary-card">
-            <p className="auth-summary-title">Modelo conectado a base de datos</p>
-            <ul className="auth-summary-list">
-              <li>Cliente: crea usuario con dirección predeterminada.</li>
-              <li>Trabajador: inicia sesión como prestador registrado.</li>
-              <li>Administrador: accede con rol de gestión empresarial.</li>
-            </ul>
-          </div>
+        <div className="container">
+          <span className="eyebrow eyebrow-dark">Acceso y registro</span>
+          <h1>Selecciona el tipo de usuario con el que vas a entrar.</h1>
+          <p>
+            El flujo cambia según el rol. Los clientes crean cuenta para
+            contratar servicios y los perfiles operativos acceden con sus
+            credenciales existentes.
+          </p>
         </div>
       </section>
 

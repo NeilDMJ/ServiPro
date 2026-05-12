@@ -1,11 +1,8 @@
 import type { NextRequest } from "next/server";
-import type { PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-type TransactionClient = Parameters
-  Parameters<PrismaClient["$transaction"]>[0]
->[0];
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
