@@ -25,10 +25,12 @@ enum EstadoVerificacionPrestador {
 
 enum EstadoOrden {
   PENDIENTE
+  ACEPTADO
   EN_PROCESO
-  FINALIZADA
+  EN_DISPUTA
+  FINALIZADO
+  CANCELADO
 }
-
 enum MetodoPago {
   TARJETA
   EFECTIVO
