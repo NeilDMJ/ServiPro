@@ -19,6 +19,7 @@ const publicAuthPaths = new Set([
 
 const publicApiPaths = new Set([
   "/api/auth/login",
+  "/api/auth/register",
   "/api/auth/logout",
   "/api/clientes",
   "/api/clientes/registrar",
