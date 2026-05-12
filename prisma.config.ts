@@ -2,7 +2,7 @@ import { defineConfig } from "prisma/config";
 
 const databaseUrl =
   process.env.DATABASE_URL ??
-  "postgresql://servipro_user:servipro_password@localhost:5432/servipro_db?schema=public";
+  "postgresql://servipro_user:servipro_password@localhost:5433/servipro_db?schema=public";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 
 /**
@@ -23,17 +23,33 @@ const MOCK_PRESTADORES = [
 const OFICIOS_DISPONIBLES = ["Todos", "Plomería", "Electricidad", "Limpieza", "Jardinería", "Pintura", "Carpintería"];
 
 export default function BuscarTrabajadorPage() {
+  const [trabajadores, setTrabajadores] = useState<any[]>([]);
   const [filtroOficio, setFiltroOficio] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function cargarTrabajadores() {
+      try {
+        const response = await fetch("/api/prestadores/listar");
+        const data = await response.json();
+        setTrabajadores(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error al cargar trabajadores:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    cargarTrabajadores();
+  }, []);
 
   const trabajadoresFiltrados = useMemo(() => {
-    return MOCK_PRESTADORES.filter((p) => {
+    return trabajadores.filter((p) => {
       const cumpleOficio = filtroOficio === "Todos" || p.oficios.includes(filtroOficio);
       const cumpleBusqueda = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
-      // Filtro obligatorio según Diagrama de Clases: Solo mostrar si isDisponible es true
       return cumpleOficio && cumpleBusqueda && p.isDisponible; 
     });
-  }, [filtroOficio, busqueda]);
+  }, [trabajadores, filtroOficio, busqueda]);
 
   return (
     <>
@@ -78,35 +94,39 @@ export default function BuscarTrabajadorPage() {
           </div>
 
           <div className="grid grid-3">
-            {trabajadoresFiltrados.map((p) => (
-              <article key={p.id} className="choice-card" style={{ textAlign: 'left', padding: '1.5rem', border: '1px solid #eee' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{p.nombre}</h3>
-                  <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                    ⭐ {p.calificacionPromedio}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                  {p.oficios.map(o => (
-                    <span key={o} style={{ fontSize: '0.75rem', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', color: '#475569' }}>{o}</span>
-                  ))}
-                </div>
-                <p style={{ fontWeight: 'bold', fontSize: '1.3rem', margin: '0 0 1.5rem 0' }}>
-                  ${p.tarifaBase} <span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: '#999' }}>tarifa base</span>
-                </p>
-                
-                <Link 
-                  href={`/adjudicacion/${p.id}?nombre=${encodeURIComponent(p.nombre)}`} 
-                  className="button-primary" 
-                  style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%' }}
-                >
-                  Seleccionar y Adjudicar
-                </Link>
-              </article>
-            ))}
+            {isLoading ? (
+              <p>Cargando prestadores...</p>
+            ) : (
+              trabajadoresFiltrados.map((p) => (
+                <article key={p.id} className="choice-card" style={{ textAlign: 'left', padding: '1.5rem', border: '1px solid #eee' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem' }}>{p.nombre}</h3>
+                    <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                      ⭐ {p.calificacionPromedio}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                    {p.oficios.map(o => (
+                      <span key={o} style={{ fontSize: '0.75rem', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', color: '#475569' }}>{o}</span>
+                    ))}
+                  </div>
+                  <p style={{ fontWeight: 'bold', fontSize: '1.3rem', margin: '0 0 1.5rem 0' }}>
+                    ${p.tarifaBase} <span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: '#999' }}>tarifa base</span>
+                  </p>
+                  
+                  <Link 
+                    href={`/adjudicacion/${p.id}?nombre=${encodeURIComponent(p.nombre)}`} 
+                    className="button-primary" 
+                    style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%' }}
+                  >
+                    Seleccionar y Adjudicar
+                  </Link>
+                </article>
+              ))
+            )}
           </div>
 
-          {trabajadoresFiltrados.length === 0 && (
+          {!isLoading && trabajadoresFiltrados.length === 0 && (
             <div style={{ textAlign: 'center', padding: '4rem', background: '#f9fafb', borderRadius: '12px' }}>
               <p style={{ color: '#666' }}>No se encontraron trabajadores disponibles con esos criterios de búsqueda.</p>
             </div>

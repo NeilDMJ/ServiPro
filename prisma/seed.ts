@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 const OFICIOS_INICIALES = [
   { nombreOficio: "Carpintería", descripcion: "Trabajos en madera y carpintería en general", tarifaBase: 0 },
