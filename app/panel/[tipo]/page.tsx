@@ -31,9 +31,10 @@ const panelContent = {
     description:
       "Supervisa la operación, coordina prestadores y valida el flujo general de servicio desde una vista central.",
     cards: [
-      { label: "Gestionar categorías", descripcion: "Alta, edición y baja de categorías de servicios.", href: "/administrador/categorias" },
-      { label: "Monitorear personal", descripcion: "Monitorear altas de personal y cobertura activa.", href: null },
-      { label: "Revisar incidencias", descripcion: "Revisar incidencias y cumplimiento por zona.", href: null },
+      { label: "Gestionar categorías",          descripcion: "Alta, edición y baja de categorías de servicios.",                    href: "/administrador/categorias"   },
+      { label: "Verificar credenciales",         descripcion: "Valida documentos e identidad de prestadores antes de activarlos.",   href: "/administrador/verificacion" },
+      { label: "Monitorear personal",            descripcion: "Monitorear altas de personal y cobertura activa.",                    href: null },
+      { label: "Revisar incidencias",            descripcion: "Revisar incidencias y cumplimiento por zona.",                        href: null },
     ] as CardLink[],
   },
 };
