@@ -10,11 +10,17 @@ export default async function CategoriasPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const data = categorias.map((c) => ({
+    ...c,
+    createdAt: c.createdAt.toISOString(),
+    updatedAt: c.updatedAt.toISOString(),
+  }));
+
   return (
     <section className="section">
       <div className="container">
         <h1>Gestión de Categorías</h1>
-        <CategoriasManager initialData={categorias} />
+        <CategoriasManager initialData={data} />
       </div>
     </section>
   );
