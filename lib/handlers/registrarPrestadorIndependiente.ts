@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashPassword } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -10,24 +10,15 @@ function getString(value: unknown): string | undefined {
   return isNonEmptyString(value) ? value.trim() : undefined;
 }
 
-type PayloadCompat = {
-  // nombres recomendados (ServiPro)
-  empresaId?: string;
+type Payload = {
   correo?: string;
   password?: string;
   nombre?: string;
   telefono?: string;
   oficios?: string[];
-
-  // compat con versión anterior
-  companyId?: string;
-  email?: string;
-  displayName?: string;
-  phone?: string;
-  trades?: string[];
 };
 
-export async function handleRegistrarPrestadorEmpresa(request: NextRequest) {
+export async function handleRegistrarPrestadorIndependiente(request: NextRequest) {
   let body: unknown;
   try {
     body = await request.json();
@@ -35,22 +26,14 @@ export async function handleRegistrarPrestadorEmpresa(request: NextRequest) {
     return Response.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const payload = (body ?? {}) as PayloadCompat;
+  const payload = (body ?? {}) as Payload;
 
-  const empresaId = getString(payload.empresaId ?? payload.companyId);
-  const correo = getString(payload.correo ?? payload.email);
+  const correo = getString(payload.correo);
   const password = getString(payload.password);
-  const nombre = getString(payload.nombre ?? payload.displayName);
-  const telefono = getString(payload.telefono ?? payload.phone);
-  const oficios = Array.isArray(payload.oficios)
-    ? payload.oficios
-    : Array.isArray(payload.trades)
-      ? payload.trades
-      : undefined;
+  const nombre = getString(payload.nombre);
+  const telefono = getString(payload.telefono);
+  const oficios = Array.isArray(payload.oficios) ? payload.oficios : undefined;
 
-  if (!empresaId) {
-    return Response.json({ error: "empresaId es requerido" }, { status: 400 });
-  }
   if (!correo) {
     return Response.json({ error: "correo es requerido" }, { status: 400 });
   }
@@ -64,44 +47,30 @@ export async function handleRegistrarPrestadorEmpresa(request: NextRequest) {
     return Response.json({ error: "nombre es requerido" }, { status: 400 });
   }
 
-  const empresa = await prisma.empresa.findUnique({
-    where: { id: empresaId },
-    select: { id: true },
-  });
-
-  if (!empresa) {
-    return Response.json({ error: "Empresa no encontrada" }, { status: 404 });
-  }
-
-  const correoNormalizado = correo.toLowerCase();
-
   const oficioConnectOrCreate = Array.isArray(oficios)
     ? oficios
         .map((o) => getString(o))
         .filter((o): o is string => Boolean(o))
-        .map((nombreOficio) => {
-          const nombreLimpio = nombreOficio.trim();
-          return {
-            where: { nombreOficio: nombreLimpio },
-            create: { nombreOficio: nombreLimpio, tarifaBase: 0 },
-          };
-        })
+        .map((nombreOficio) => ({
+          where: { nombreOficio: nombreOficio.trim() },
+          create: { nombreOficio: nombreOficio.trim(), tarifaBase: 0 },
+        }))
     : undefined;
 
   try {
-    const passwordHash = hashPassword(password);
+    const passwordHash = bcrypt.hashSync(password, 10);
 
     const usuario = await prisma.usuario.create({
       data: {
-        correo: correoNormalizado,
+        correo: correo.toLowerCase(),
         passwordHash,
         role: "PRESTADOR",
         nombre,
         telefono,
         prestador: {
           create: {
-            tipoRegistro: "EMPRESA",
-            empresa: { connect: { id: empresaId } },
+            tipoRegistro: "INDEPENDIENTE",
+            empresaId: null,
             calificacionPromedio: 0,
             isDisponible: true,
             oficios: oficioConnectOrCreate
@@ -114,7 +83,9 @@ export async function handleRegistrarPrestadorEmpresa(request: NextRequest) {
         id: true,
         correo: true,
         role: true,
-        prestador: { select: { id: true, empresaId: true, tipoRegistro: true } },
+        prestador: {
+          select: { id: true, tipoRegistro: true, oficios: { select: { nombreOficio: true } } },
+        },
       },
     });
 

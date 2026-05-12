@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('CLIENTE', 'PRESTADOR', 'COMPANY_ADMIN');
+CREATE TYPE "Role" AS ENUM ('CLIENTE', 'PRESTADOR', 'COMPANY_ADMIN', 'VERIFICADOR');
 
 -- CreateEnum
 CREATE TYPE "TipoRegistroPrestador" AS ENUM ('INDEPENDIENTE', 'EMPRESA');
@@ -12,6 +12,18 @@ CREATE TYPE "MetodoPago" AS ENUM ('TARJETA', 'EFECTIVO', 'TRANSFERENCIA');
 
 -- CreateEnum
 CREATE TYPE "EstadoPago" AS ENUM ('PENDIENTE', 'APROBADO', 'RECHAZADO');
+
+-- CreateEnum
+CREATE TYPE "EstadoCategoria" AS ENUM ('ACTIVA', 'INACTIVA');
+
+-- CreateEnum
+CREATE TYPE "EstadoVerificacion" AS ENUM ('PENDIENTE_VERIFICACION', 'EN_REVISION', 'VERIFICACION_EN_PROCESO', 'PENDIENTE_INFORMACION', 'ESCALADO_FALSIFICACION', 'SUSPENDIDO_TEMPORALMENTE', 'VERIFICADO', 'RECHAZADO');
+
+-- CreateEnum
+CREATE TYPE "TipoDocumento" AS ENUM ('IDENTIFICACION_OFICIAL', 'CERTIFICADO_TECNICO', 'CONSTANCIA', 'OTRO');
+
+-- CreateEnum
+CREATE TYPE "MotivoRechazo" AS ENUM ('CERTIFICACIONES_VENCIDAS', 'DOCUMENTACION_INCOMPLETA', 'DATOS_NO_COINCIDEN', 'FALSIFICACION_DETECTADA', 'INSTITUCION_NO_RECONOCIDA', 'OTRO');
 
 -- CreateTable
 CREATE TABLE "Usuario" (
@@ -44,6 +56,8 @@ CREATE TABLE "Empresa" (
     "rfc" TEXT NOT NULL,
     "razonSocial" TEXT NOT NULL,
     "direccionFiscal" TEXT NOT NULL,
+    "ramo" TEXT,
+    "ubicacion" TEXT,
     "adminUsuarioId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -59,6 +73,9 @@ CREATE TABLE "Prestador" (
     "isDisponible" BOOLEAN NOT NULL DEFAULT true,
     "tipoRegistro" "TipoRegistroPrestador" NOT NULL,
     "empresaId" TEXT,
+    "categoriaId" TEXT,
+    "estadoVerificacion" "EstadoVerificacion" NOT NULL DEFAULT 'PENDIENTE_VERIFICACION',
+    "intentosVerificacion" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -122,6 +139,79 @@ CREATE TABLE "Factura" (
 );
 
 -- CreateTable
+CREATE TABLE "Categoria" (
+    "id" TEXT NOT NULL,
+    "nombre" TEXT NOT NULL,
+    "descripcion" TEXT NOT NULL,
+    "icono" TEXT,
+    "estado" "EstadoCategoria" NOT NULL DEFAULT 'ACTIVA',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Categoria_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "LogAuditoria" (
+    "id" TEXT NOT NULL,
+    "accion" TEXT NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "detalle" TEXT,
+    "entidad" TEXT,
+    "entidadId" TEXT,
+    "usuarioId" TEXT,
+    "categoriaId" TEXT,
+    "realizadoPor" TEXT,
+    "rol" TEXT,
+    "verificacionId" TEXT,
+
+    CONSTRAINT "LogAuditoria_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Documento" (
+    "id" TEXT NOT NULL,
+    "prestadorId" TEXT NOT NULL,
+    "tipo" "TipoDocumento" NOT NULL,
+    "nombreArchivo" TEXT NOT NULL,
+    "urlArchivo" TEXT NOT NULL,
+    "mimeType" TEXT NOT NULL,
+    "esAutentico" BOOLEAN,
+    "estaVigente" BOOLEAN,
+    "datosCoinciden" BOOLEAN,
+    "observacion" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Documento_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "VerificacionCredenciales" (
+    "id" TEXT NOT NULL,
+    "prestadorId" TEXT NOT NULL,
+    "estado" "EstadoVerificacion" NOT NULL DEFAULT 'PENDIENTE_VERIFICACION',
+    "intento" INTEGER NOT NULL DEFAULT 1,
+    "verificadorId" TEXT,
+    "aprobado" BOOLEAN,
+    "motivoRechazo" "MotivoRechazo",
+    "detalleRechazo" TEXT,
+    "observaciones" TEXT,
+    "fechaIniciada" TIMESTAMP(3),
+    "fechaDecision" TIMESTAMP(3),
+    "fechaLimite" TIMESTAMP(3),
+    "escaladoAdminId" TEXT,
+    "fechaEscalamiento" TIMESTAMP(3),
+    "motivoEscalamiento" TEXT,
+    "infAdicionalSolicitada" BOOLEAN NOT NULL DEFAULT false,
+    "infAdicionalDetalle" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "VerificacionCredenciales_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_PrestadorToServicio" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
@@ -154,6 +244,9 @@ CREATE INDEX "Prestador_tipoRegistro_idx" ON "Prestador"("tipoRegistro");
 CREATE INDEX "Prestador_empresaId_idx" ON "Prestador"("empresaId");
 
 -- CreateIndex
+CREATE INDEX "Prestador_estadoVerificacion_idx" ON "Prestador"("estadoVerificacion");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Servicio_nombreOficio_key" ON "Servicio"("nombreOficio");
 
 -- CreateIndex
@@ -178,6 +271,33 @@ CREATE UNIQUE INDEX "Factura_folioFiscal_key" ON "Factura"("folioFiscal");
 CREATE UNIQUE INDEX "Factura_pagoId_key" ON "Factura"("pagoId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Categoria_nombre_key" ON "Categoria"("nombre");
+
+-- CreateIndex
+CREATE INDEX "Categoria_estado_idx" ON "Categoria"("estado");
+
+-- CreateIndex
+CREATE INDEX "LogAuditoria_verificacionId_idx" ON "LogAuditoria"("verificacionId");
+
+-- CreateIndex
+CREATE INDEX "LogAuditoria_timestamp_idx" ON "LogAuditoria"("timestamp");
+
+-- CreateIndex
+CREATE INDEX "LogAuditoria_categoriaId_idx" ON "LogAuditoria"("categoriaId");
+
+-- CreateIndex
+CREATE INDEX "Documento_prestadorId_idx" ON "Documento"("prestadorId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VerificacionCredenciales_prestadorId_key" ON "VerificacionCredenciales"("prestadorId");
+
+-- CreateIndex
+CREATE INDEX "VerificacionCredenciales_estado_idx" ON "VerificacionCredenciales"("estado");
+
+-- CreateIndex
+CREATE INDEX "VerificacionCredenciales_verificadorId_idx" ON "VerificacionCredenciales"("verificadorId");
+
+-- CreateIndex
 CREATE INDEX "_PrestadorToServicio_B_index" ON "_PrestadorToServicio"("B");
 
 -- AddForeignKey
@@ -193,6 +313,9 @@ ALTER TABLE "Prestador" ADD CONSTRAINT "Prestador_usuarioId_fkey" FOREIGN KEY ("
 ALTER TABLE "Prestador" ADD CONSTRAINT "Prestador_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Prestador" ADD CONSTRAINT "Prestador_categoriaId_fkey" FOREIGN KEY ("categoriaId") REFERENCES "Categoria"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Orden" ADD CONSTRAINT "Orden_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Cliente"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -206,6 +329,18 @@ ALTER TABLE "Pago" ADD CONSTRAINT "Pago_ordenId_fkey" FOREIGN KEY ("ordenId") RE
 
 -- AddForeignKey
 ALTER TABLE "Factura" ADD CONSTRAINT "Factura_pagoId_fkey" FOREIGN KEY ("pagoId") REFERENCES "Pago"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LogAuditoria" ADD CONSTRAINT "LogAuditoria_categoriaId_fkey" FOREIGN KEY ("categoriaId") REFERENCES "Categoria"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LogAuditoria" ADD CONSTRAINT "LogAuditoria_verificacionId_fkey" FOREIGN KEY ("verificacionId") REFERENCES "VerificacionCredenciales"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Documento" ADD CONSTRAINT "Documento_prestadorId_fkey" FOREIGN KEY ("prestadorId") REFERENCES "Prestador"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "VerificacionCredenciales" ADD CONSTRAINT "VerificacionCredenciales_prestadorId_fkey" FOREIGN KEY ("prestadorId") REFERENCES "Prestador"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_PrestadorToServicio" ADD CONSTRAINT "_PrestadorToServicio_A_fkey" FOREIGN KEY ("A") REFERENCES "Prestador"("id") ON DELETE CASCADE ON UPDATE CASCADE;
