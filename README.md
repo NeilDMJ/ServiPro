@@ -1,6 +1,6 @@
 # ServiPro
 
-Plataforma de contratación de servicios del hogar.
+Plataforma de contratación de servicios del hogar...
 
 ## Descripcion
 
@@ -14,4 +14,3 @@ El sistema ofrece paneles por rol (cliente, prestador y administrador) con proce
 - Persistencia: PostgreSQL con Prisma ORM, esquema tipado, migraciones versionadas y cliente generado para acceso a datos.
 - Autenticacion y sesiones: endpoints de autenticacion en API routes y manejo de sesiones en la capa de servidor.
 - Contenedores: Docker Compose orquesta la base de datos en entorno local; la app se ejecuta con `npm run dev` y se conecta mediante la variable `DATABASE_URL`.
-
