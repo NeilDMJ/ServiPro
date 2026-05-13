@@ -2,59 +2,16 @@
 
 Plataforma de contratación de servicios del hogar.
 
-## Diagramas
+## Descripcion
 
-- [docs/arquitectura-despliegue.md](docs/arquitectura-despliegue.md)
-- [docs/diagrama-prisma.md](docs/diagrama-prisma.md) (autogenerado desde Prisma)
+ServiPro es una plataforma web (Proyecto Web 2) que conecta clientes con prestadores de servicios del hogar. Permite publicar y gestionar solicitudes, administrar perfiles y llevar un flujo claro de atencion con estados de orden y seguimiento.
 
-Para regenerar el diagrama autogenerado:
+El sistema ofrece paneles por rol (cliente, prestador y administrador) con procesos de registro y verificacion para garantizar confianza. Ademas, centraliza la informacion de servicios y facilita la coordinacion de trabajos en un solo lugar.
 
-```bash
-npm run prisma:diagram
-```
+## Tecnologias y arquitectura de contenedores
 
-## Getting Started
+- Frontend/Backend: Next.js (App Router) con TypeScript, renderizado híbrido (SSR/CSR) y rutas API internas para la capa de servicios.
+- Persistencia: PostgreSQL con Prisma ORM, esquema tipado, migraciones versionadas y cliente generado para acceso a datos.
+- Autenticacion y sesiones: endpoints de autenticacion en API routes y manejo de sesiones en la capa de servidor.
+- Contenedores: Docker Compose orquesta la base de datos en entorno local; la app se ejecuta con `npm run dev` y se conecta mediante la variable `DATABASE_URL`.
 
-## Base de datos (PostgreSQL)
-
-La configuración local usa PostgreSQL vía Docker Compose y Prisma.
-
-```bash
-docker compose up -d
-npx prisma migrate dev
-```
-
-La conexión se toma desde `.env` (variable `DATABASE_URL`).
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
